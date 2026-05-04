@@ -3,8 +3,6 @@
 A secure, 100% client-side AES-256 encryption and decryption web application.  
 Designed for maximum security, privacy, and ease of use.
 
-![Ice Encrypt Hero Image](Soma1.png)
-
 ## 🌟 Features
 
 * **Zero Backend**: Processing happens locally in your browser. No data is ever transmitted to a server.
