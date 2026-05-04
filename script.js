@@ -1,1204 +1,941 @@
-const SECRET_KEY = getEnvVar('SECRET_KEY');
-// UI Elements
-const textInput = document.getElementById('textInput');
-const textOutput = document.getElementById('textOutput');
-const encryptBtn = document.getElementById('encryptBtn');
-const decryptBtn = document.getElementById('decryptBtn');
-const copyBtn = document.getElementById('copyBtn');
-const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-const historyList = document.getElementById('historyList');
-const searchInput = document.getElementById('searchHistory');
-const themeSwitch = document.getElementById('themeSwitch');
-// NEW: Password elements
-const encryptionKey = document.getElementById('encryptionKey');
-const passwordToggle = document.getElementById('passwordToggle');
-const passwordStrength = document.getElementById('passwordStrength');
-const strengthLabel = document.getElementById('strengthLabel');
-const strengthBars = document.querySelectorAll('.strength-bar');
-// NEW: Custom key option elements
-const useCustomKeyCheckbox = document.getElementById('useCustomKey');
-const passwordSection = document.getElementById('passwordSection');
-const builtinKeyInfo = document.getElementById('builtinKeyInfo');
-// NEW: Error message element
-const textError = document.getElementById('textError');
+/**
+ * Ice Encrypt v2.0 - Main Script
+ * Re-architected into modular functions and modernized syntax.
+ */
 
-// Mode Toggle Elements
-const textModeBtn = document.getElementById('textModeBtn');
-const fileModeBtn = document.getElementById('fileModeBtn');
-const textModeSection = document.getElementById('textModeSection');
-const fileModeSection = document.getElementById('fileModeSection');
-const textOutputSection = document.getElementById('textOutputSection');
-const fileOutputSection = document.getElementById('fileOutputSection');
+// Global state
+const state = {
+    mode: 'text', // 'text' or 'file'
+    useCustomKey: false,
+    sessionKey: generateSessionKey(),
+    history: [],
+    selectedFiles: [],
+    processedFiles: [],
+    isProcessing: false,
+    abortController: null
+};
 
-// File Elements
-const fileDropZone = document.getElementById('fileDropZone');
-const fileInput = document.getElementById('fileInput');
-const fileList = document.getElementById('fileList');
-const fileOutputList = document.getElementById('fileOutputList');
-const downloadAllBtn = document.getElementById('downloadAllBtn');
-
-// Progress Elements
-const progressSection = document.getElementById('progressSection');
-const progressFill = document.getElementById('progressFill');
-const progressStatus = document.getElementById('progressStatus');
-const progressPercent = document.getElementById('progressPercent');
-const cancelBtn = document.getElementById('cancelBtn');
-const encryptBtnText = document.getElementById('encryptBtnText');
-const decryptBtnText = document.getElementById('decryptBtnText');
-
-// File Processing
-let selectedFiles = [];
-let processedFiles = [];
-let currentMode = 'text';
-let isProcessing = false;
-let processingController = null;
-
-// Constants
-const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
-const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
-const SUPPORTED_TYPES = [
-    'image/*',
-    'text/*',
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/zip',
-    'application/x-zip-compressed',
-    'application/json',
-    'application/xml',
-    'application/javascript'
-];
-
-
-let history = [];
-
-// =======================
-// Error Handling Utility (NEW)
-// =======================
-function showTextError(message) {
-    textError.textContent = `⚠️ ${message}`;
-    textError.classList.remove('hidden');
-    // Hide the error after 5 seconds
-    setTimeout(() => {
-        textError.classList.add('hidden');
-    }, 5000);
-}
-
-function clearTextError() {
-    textError.textContent = '';
-    textError.classList.add('hidden');
-}
-
-// =======================
-// Password Management Functions
-// =======================
-function togglePasswordVisibility() {
-    const isPassword = encryptionKey.type === 'password';
+// DOM Elements
+const els = {
+    // Nav
+    themeBtn: document.getElementById('themeToggleBtn'),
+    hamburger: document.getElementById('navHamburger'),
+    navLinks: document.getElementById('navLinks'),
     
-    if (isPassword) {
-        encryptionKey.type = 'text';
-        passwordToggle.textContent = '🙈';
-        passwordToggle.title = 'Hide password';
+    // Key Config
+    useCustomKey: document.getElementById('useCustomKey'),
+    passwordSection: document.getElementById('passwordSection'),
+    encryptionKey: document.getElementById('encryptionKey'),
+    passwordToggle: document.getElementById('passwordToggle'),
+    strengthFill: document.getElementById('strengthFill'),
+    strengthLabel: document.getElementById('strengthLabel'),
+    sessionKeyBanner: document.getElementById('sessionKeyBanner'),
+    
+    // Modes
+    textModeBtn: document.getElementById('textModeBtn'),
+    fileModeBtn: document.getElementById('fileModeBtn'),
+    textModeSection: document.getElementById('textModeSection'),
+    fileModeSection: document.getElementById('fileModeSection'),
+    
+    // Text Mode
+    textInput: document.getElementById('textInput'),
+    textOutput: document.getElementById('textOutput'),
+    charCounter: document.getElementById('charCounter'),
+    textError: document.getElementById('textError'),
+    encryptBtn: document.getElementById('encryptBtn'),
+    decryptBtn: document.getElementById('decryptBtn'),
+    swapBtn: document.getElementById('swapBtn'),
+    copyBtn: document.getElementById('copyBtn'),
+    
+    // File Mode
+    dropZone: document.getElementById('fileDropZone'),
+    fileInput: document.getElementById('fileInput'),
+    browseBtn: document.getElementById('browseBtn'),
+    fileList: document.getElementById('fileList'),
+    encryptFilesBtn: document.getElementById('encryptFilesBtn'),
+    decryptFilesBtn: document.getElementById('decryptFilesBtn'),
+    
+    // Progress
+    progressSection: document.getElementById('progressSection'),
+    progressBar: document.getElementById('progressBar'),
+    progressFill: document.getElementById('progressFill'),
+    progressStatus: document.getElementById('progressStatus'),
+    progressPercent: document.getElementById('progressPercent'),
+    cancelBtn: document.getElementById('cancelBtn'),
+    
+    // File Output
+    fileOutputSection: document.getElementById('fileOutputSection'),
+    fileOutputList: document.getElementById('fileOutputList'),
+    downloadAllBtn: document.getElementById('downloadAllBtn'),
+    
+    // History
+    historyToggle: document.getElementById('historyToggle'),
+    historyBody: document.getElementById('historyBody'),
+    historyCount: document.getElementById('historyCount'),
+    historyList: document.getElementById('historyList'),
+    searchHistory: document.getElementById('searchHistory'),
+    clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+    
+    // Toasts
+    toastContainer: document.getElementById('toastContainer')
+};
+
+/* ==========================================================================
+   Initialization
+   ========================================================================== */
+
+function init() {
+    loadTheme();
+    loadHistory();
+    attachEventListeners();
+    updateUIForMode(state.mode);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+/* ==========================================================================
+   Toast Notification System
+   ========================================================================== */
+
+function showToast(title, message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    
+    let iconSvg = '';
+    if (type === 'success') {
+        iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+    } else if (type === 'error') {
+        iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
     } else {
-        encryptionKey.type = 'password';
-        passwordToggle.textContent = '👁️';
-        passwordToggle.title = 'Show password';
+        iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
     }
+
+    toast.innerHTML = `
+        ${iconSvg}
+        <div class="toast-content">
+            <div class="toast-title">${escapeHtml(title)}</div>
+            ${message ? `<div class="toast-msg">${escapeHtml(message)}</div>` : ''}
+        </div>
+        <button class="toast-close" aria-label="Close notification">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+
+    els.toastContainer.appendChild(toast);
+
+    const closeBtn = toast.querySelector('.toast-close');
+    
+    const removeToast = () => {
+        toast.classList.add('hiding');
+        toast.addEventListener('animationend', () => toast.remove());
+    };
+    
+    closeBtn.addEventListener('click', removeToast);
+    setTimeout(removeToast, 5000);
+}
+
+/* ==========================================================================
+   Key Management & Security
+   ========================================================================== */
+
+function generateSessionKey() {
+    // Generate a proper random 256-bit session key
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function getCurrentKey() {
+    if (state.useCustomKey) {
+        const key = els.encryptionKey.value.trim();
+        if (!key) throw new Error("Please enter a custom encryption key.");
+        if (key.length < 6) throw new Error("Custom key must be at least 6 characters.");
+        return key;
+    }
+    return state.sessionKey;
 }
 
 function evaluatePasswordStrength(password) {
-    let score = 0;
-    let feedback = 'Not evaluated';
-    let strength = 0;
-    
     if (!password) {
-        strengthBars.forEach(bar => bar.className = 'strength-bar');
-        strengthLabel.textContent = 'Not evaluated';
+        els.strengthFill.className = 'strength-fill';
+        els.strengthLabel.textContent = '—';
         return;
     }
     
-    // Length check
+    let score = 0;
     if (password.length >= 8) score++;
     if (password.length >= 12) score++;
-    
-    // Character variety checks
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
     
-    // Determine strength level
-    if (score < 3) {
-        feedback = 'Weak';
-        strength = 1;
-    } else if (score < 5) {
-        feedback = 'Medium';
-        strength = 2;
+    els.strengthFill.className = 'strength-fill';
+    
+    if (score < 2) {
+        els.strengthFill.classList.add('weak');
+        els.strengthLabel.textContent = 'Weak';
+    } else if (score < 4) {
+        els.strengthFill.classList.add('medium');
+        els.strengthLabel.textContent = 'Good';
     } else {
-        feedback = 'Strong';
-        strength = 3;
+        els.strengthFill.classList.add('strong');
+        els.strengthLabel.textContent = 'Strong';
+    }
+}
+
+/* ==========================================================================
+   UI Interactions & Navigation
+   ========================================================================== */
+
+function loadTheme() {
+    const isDark = localStorage.getItem('darkMode') === 'true';
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+}
+
+function toggleTheme() {
+    const isDark = document.documentElement.dataset.theme !== 'dark';
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    localStorage.setItem('darkMode', isDark);
+}
+
+function updateUIForMode(mode) {
+    state.mode = mode;
+    
+    // Tabs
+    els.textModeBtn.classList.toggle('active', mode === 'text');
+    els.fileModeBtn.classList.toggle('active', mode === 'file');
+    els.textModeBtn.setAttribute('aria-selected', mode === 'text');
+    els.fileModeBtn.setAttribute('aria-selected', mode === 'file');
+    
+    // Panels
+    els.textModeSection.hidden = mode !== 'text';
+    els.fileModeSection.hidden = mode !== 'file';
+    
+    // Hide progress/outputs
+    els.progressSection.hidden = true;
+    if (mode === 'text') {
+        els.fileOutputSection.hidden = true;
+    } else {
+        els.textOutput.value = '';
+    }
+}
+
+function toggleHistory() {
+    const isExpanded = els.historyToggle.getAttribute('aria-expanded') === 'true';
+    els.historyToggle.setAttribute('aria-expanded', !isExpanded);
+    els.historyBody.hidden = isExpanded;
+}
+
+function toggleCustomKey() {
+    state.useCustomKey = els.useCustomKey.checked;
+    els.passwordSection.hidden = !state.useCustomKey;
+    els.sessionKeyBanner.hidden = state.useCustomKey;
+    
+    if (!state.useCustomKey) {
+        els.textError.hidden = true;
+    }
+}
+
+function updateCharCounter() {
+    const count = els.textInput.value.length;
+    els.charCounter.textContent = \`\${count} char\${count !== 1 ? 's' : ''}\`;
+}
+
+function swapText() {
+    const currentInput = els.textInput.value;
+    const currentOutput = els.textOutput.value;
+    
+    if (!currentOutput) {
+        showToast("Cannot Swap", "No output generated yet.", "error");
+        return;
     }
     
-    // Update UI
-    strengthBars.forEach((bar, index) => {
-        if (index < strength) {
-            bar.className = 'strength-bar active';
-            if (strength === 1) bar.classList.add('weak');
-            else if (strength === 2) bar.classList.add('medium');
-            else bar.classList.add('strong');
+    els.textInput.value = currentOutput;
+    els.textOutput.value = '';
+    updateCharCounter();
+    showToast("Swapped", "Input and output have been swapped.", "info");
+}
+
+/* ==========================================================================
+   Text Encryption / Decryption (Web Crypto API)
+   ========================================================================== */
+
+// Helper to derive a proper key using PBKDF2
+async function deriveKey(password, salt) {
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(password),
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits", "deriveKey"]
+    );
+    return crypto.subtle.deriveKey(
+        {
+            name: "PBKDF2",
+            salt: salt,
+            iterations: 100000,
+            hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+    );
+}
+
+// ArrayBuffer to Base64
+function bufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
+
+// Base64 to ArrayBuffer
+function base64ToBuffer(base64) {
+    const binary = window.atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+async function handleTextCrypto(operation) {
+    els.textError.hidden = true;
+    const text = els.textInput.value.trim();
+    
+    if (!text) {
+        els.textError.textContent = "Please enter some text.";
+        els.textError.hidden = false;
+        return;
+    }
+    
+    let password;
+    try {
+        password = getCurrentKey();
+    } catch (e) {
+        els.textError.textContent = e.message;
+        els.textError.hidden = false;
+        return;
+    }
+    
+    const btn = operation === 'encrypt' ? els.encryptBtn : els.decryptBtn;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg> Processing…`;
+    btn.disabled = true;
+
+    try {
+        let result = '';
+        if (operation === 'encrypt') {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const key = await deriveKey(password, salt);
+            
+            const encryptedContent = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                data
+            );
+            
+            // Format: Base64(salt) : Base64(iv) : Base64(encryptedContent)
+            result = `v2:${bufferToBase64(salt)}:${bufferToBase64(iv)}:${bufferToBase64(encryptedContent)}`;
+            
         } else {
-            bar.className = 'strength-bar';
+            // Decrypt
+            if (text.startsWith('U2FzZ') || text.includes('ICE_ENCRYPT_SEPARATOR')) {
+                throw new Error("This looks like v1 legacy encryption or a file. Please use the v1 version of the app to decrypt legacy data.");
+            }
+            
+            const parts = text.split(':');
+            if (parts.length !== 4 || parts[0] !== 'v2') {
+                throw new Error("Invalid encrypted format. Make sure you pasted the entire string.");
+            }
+            
+            const salt = base64ToBuffer(parts[1]);
+            const iv = base64ToBuffer(parts[2]);
+            const encryptedContent = base64ToBuffer(parts[3]);
+            
+            const key = await deriveKey(password, salt);
+            
+            try {
+                const decryptedContent = await crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: iv },
+                    key,
+                    encryptedContent
+                );
+                const decoder = new TextDecoder();
+                result = decoder.decode(decryptedContent);
+            } catch (err) {
+                throw new Error("Decryption failed. Incorrect key or corrupted data.");
+            }
         }
-    });
-    
-    strengthLabel.textContent = feedback;
-}
-
-function validateEncryptionKey() {
-    const key = encryptionKey.value.trim();
-    
-    if (!key) {
-        showTextError('Please enter an encryption key/password.');
-        return false;
-    }
-    
-    if (key.length < 6) {
-        showTextError('Encryption key must be at least 6 characters long.');
-        return false;
-    }
-    
-    return true;
-}
-
-// NEW: Custom key option management
-function toggleCustomKeyOption() {
-    const isUsingCustomKey = useCustomKeyCheckbox.checked;
-    
-    if (isUsingCustomKey) {
-        // Show custom key input section
-        passwordSection.classList.remove('hidden');
-        builtinKeyInfo.classList.add('hidden');
-    } else {
-        // Hide custom key input section, show built-in key info
-        passwordSection.classList.add('hidden');
-        builtinKeyInfo.classList.remove('hidden');
-        // Clear any custom key when switching to built-in
-        encryptionKey.value = '';
-        evaluatePasswordStrength('');
-        clearTextError();
+        
+        els.textOutput.value = result;
+        addToHistory(operation, text, result);
+        showToast("Success", \`Text successfully \${operation}ed.\`, "success");
+        
+    } catch (e) {
+        els.textError.textContent = e.message;
+        els.textError.hidden = false;
+        showToast("Error", e.message, "error");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 
-// Initialize custom key option on page load
-function initializeCustomKeyOption() {
-    // Ensure initial state matches checkbox (should be unchecked by default)
-    toggleCustomKeyOption();
-}
+/* ==========================================================================
+   File Management
+   ========================================================================== */
 
-function getEncryptionKey() {
-    if (useCustomKeyCheckbox.checked) {
-        return encryptionKey.value.trim();
-    } else {
-        return SECRET_KEY;
-    }
-}
-
-function validateCurrentKey() {
-    if (useCustomKeyCheckbox.checked) {
-        return validateEncryptionKey();
-    } else {
-        return true; // Built-in key is always valid
-    }
-}
-
-
-// File processing utilities
 function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 B';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function getFileIcon(mimeType) {
-    if (mimeType.startsWith('image/')) return '🖼️';
-    if (mimeType.startsWith('text/')) return '📄';
-    if (mimeType.includes('pdf')) return '📕';
-    if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
-    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
-    if (mimeType.includes('zip') || mimeType.includes('compressed')) return '📦';
+function getFileIcon(filename, type) {
+    if (filename.endsWith('.ice')) return '🔐';
+    if (type.startsWith('image/')) return '🖼️';
+    if (type.startsWith('text/') || type.includes('json')) return '📄';
+    if (type.includes('pdf')) return '📕';
+    if (type.includes('zip') || type.includes('compressed')) return '📦';
     return '📁';
 }
 
-function isSupportedFileType(file) {
-    // Check if file type is in supported types or if it's a generic match
-    return SUPPORTED_TYPES.some(type => {
-        if (type.endsWith('/*')) {
-            return file.type.startsWith(type.slice(0, -1));
+function handleFilesAdded(filesArray) {
+    const MAX_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
+    let added = 0;
+    
+    filesArray.forEach(file => {
+        if (file.size > MAX_SIZE) {
+            showToast("File too large", \`"\${file.name}" exceeds the 2GB limit.\`, "error");
+            return;
         }
-        return file.type === type;
-    }) || file.name.toLowerCase().endsWith('.ice'); // Allow encrypted files
-}
-
-function validateFile(file) {
-    if (file.size > MAX_FILE_SIZE) {
-        throw new Error(`File "${file.name}" is too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}.`);
-    }
-    if (!isSupportedFileType(file)) {
-        throw new Error(`File type "${file.type || 'unknown'}" is not supported.`);
-    }
-    return true;
-}
-
-function loadHistory() {
-    const savedHistory = localStorage.getItem('iceEncryptHistory');
-    if (savedHistory) {
-        try {
-            history = JSON.parse(savedHistory);
-            renderHistory();
-        } catch (e) {
-            console.error('Error loading history:', e);
-            history = [];
+        // Don't add duplicates
+        if (!state.selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+            state.selectedFiles.push(file);
+            added++;
         }
+    });
+    
+    if (added > 0) {
+        renderFileList();
     }
 }
 
-
-function saveHistory() {
-    try {
-        localStorage.setItem('iceEncryptHistory', JSON.stringify(history));
-    } catch (e) {
-        console.error('Error saving history:', e);
-    }
+function removeFile(index) {
+    state.selectedFiles.splice(index, 1);
+    renderFileList();
 }
 
-/**
- * Add a new item to history
- * @param {string} type - 'encrypt' or 'decrypt'
- * @param {string} input - Original input text
- * @param {string} output - Result text
- */
-function addToHistory(type, input, output) {
-    const timestamp = new Date().toLocaleString();
-    const historyItem = {
-        type,
-        input,
-        output,
-        timestamp
-    };
-    
-    // Add to beginning of array (newest first)
-    history.unshift(historyItem);
-    
-    // Limit history to 50 items to prevent localStorage overflow
-    if (history.length > 50) {
-        history = history.slice(0, 50);
-    }
-    
-    saveHistory();
-    // Re-render history with current search value
-    renderHistory(searchInput.value);
-}
-
-// =======================
-// Render History (BUG FIX: Use filtered index for deletion)
-// =======================
-function renderHistory(filterText = '') {
-    if (history.length === 0) {
-        historyList.innerHTML = '<p class="history-empty">No history yet. Start encrypting or decrypting!</p>';
+function renderFileList() {
+    if (state.selectedFiles.length === 0) {
+        els.fileList.innerHTML = '';
         return;
     }
-
-    historyList.innerHTML = '';
-
-    const filtered = history.filter(item =>
-        item.input.toLowerCase().includes(filterText.toLowerCase()) ||
-        item.output.toLowerCase().includes(filterText.toLowerCase()) ||
-        item.type.toLowerCase().includes(filterText.toLowerCase())
-    );
-
-    if (filtered.length === 0) {
-        historyList.innerHTML = '<p class="history-empty">No matches found.</p>';
-        return;
-    }
-
-    // Map filtered item to its original index in the main history array
-    const historyWithOriginalIndex = filtered.map(item => ({
-        ...item,
-        originalIndex: history.findIndex(h => h === item)
-    }));
-
-
-    historyWithOriginalIndex.forEach((item) => {
-        const historyItem = document.createElement('div');
-        historyItem.className = 'history-item';
-
-        const icon = item.type === 'encrypt' ? '🔐' : '🔓';
-        const typeLabel = item.type === 'encrypt' ? 'Encrypted' : 'Decrypted';
-
-        historyItem.innerHTML = `
-            <div class="history-item-header">
-                <span class="history-item-type">${icon} ${typeLabel}</span>
-                <div class="history-item-actions">
-                    <span class="history-item-time">${item.timestamp}</span>
-                    <button class="btn-delete" title="Delete this entry" data-index="${item.originalIndex}">🗑️</button>
+    
+    els.fileList.innerHTML = state.selectedFiles.map((file, i) => \`
+        <div class="file-item">
+            <div class="file-info">
+                <span class="file-icon">\${getFileIcon(file.name, file.type)}</span>
+                <div class="file-details">
+                    <div class="file-name" title="\${escapeHtml(file.name)}">\${escapeHtml(file.name)}</div>
+                    <div class="file-meta">\${formatFileSize(file.size)}</div>
                 </div>
             </div>
-            <div class="history-item-content">
-                <div class="history-item-label">Input:</div>
-                <div class="history-item-text">${escapeHtml(truncateText(item.input, 100))}</div>
-                <div class="history-item-label">Output:</div>
-                <div class="history-item-text">${escapeHtml(truncateText(item.output, 100))}</div>
-                <button class="btn-copy-small" title="Copy Output" data-output="${escapeHtml(item.output)}">📋 Copy Output</button>
-            </div>
-        `;
-
-        historyList.appendChild(historyItem);
-    });
-
-    // Attach delete and copy events
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', e => {
-            // Use the original index
-            const index = parseInt(e.currentTarget.getAttribute('data-index'));
-            deleteHistoryItem(index);
-        });
-    });
-
-    document.querySelectorAll('.btn-copy-small').forEach(btn => {
-        btn.addEventListener('click', e => {
-            const text = e.target.getAttribute('data-output');
-            navigator.clipboard.writeText(text).then(() => {
-                e.target.textContent = '✓ Copied!';
-                setTimeout(() => (e.target.textContent = '📋 Copy Output'), 1500);
-            });
-        });
-    });
-}
-
-function deleteHistoryItem(index) {
-    // Note: index passed here is the original index in the main history array
-    if (index < 0 || index >= history.length) return;
-    if (confirm('Delete this history entry?')) {
-        history.splice(index, 1);
-        saveHistory();
-        // Re-render with current search input value
-        renderHistory(searchInput.value);
-    }
-}
-
-// =======================
-// Search History
-// =======================
-searchInput?.addEventListener('input', e => {
-    renderHistory(e.target.value);
-});
-
-// =======================
-// Theme Toggle
-// =======================
-function applyTheme(isDark) {
-    document.body.classList.toggle('dark-mode', isDark);
-    localStorage.setItem('darkMode', isDark);
-}
-
-themeSwitch?.addEventListener('change', e => {
-    applyTheme(e.target.checked);
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadHistory();
-
-    // Load theme
-    const savedTheme = localStorage.getItem('darkMode') === 'true';
-    themeSwitch.checked = savedTheme;
-    applyTheme(savedTheme);
-});
-
-
-
-
-function clearHistory() {
-    if (history.length === 0) {
-        return;
-    }
-    
-    if (confirm('Are you sure you want to clear all history?')) {
-        history = [];
-        saveHistory();
-        renderHistory();
-    }
-}
-
-
-/**
- * Encrypt text using AES encryption
- * @param {string} text - Text to encrypt
- * @returns {string} - Encrypted text
- */
-function encryptText(text) {
-    if (!text.trim()) {
-        throw new Error('Please enter text to encrypt');
-    }
-
-    const key = getEncryptionKey();
-    if (!key) {
-        throw new Error('Encryption key is required');
-    }
-
-    // Use CryptoJS AES encryption
-    const encrypted = CryptoJS.AES.encrypt(text, key).toString();
-    return encrypted;
-}
-
-/**
- * Decrypt text using AES decryption
- * @param {string} encryptedText - Text to decrypt
- * @returns {string} - Decrypted text
- */
-function decryptText(encryptedText) {
-    if (!encryptedText.trim()) {
-        throw new Error('Please enter text to decrypt');
-    }
-
-    const key = getEncryptionKey();
-    if (!key) {
-        throw new Error('Encryption key is required');
-    }
-
-    try {
-        // Use CryptoJS AES decryption
-        const decrypted = CryptoJS.AES.decrypt(encryptedText, key);
-        const originalText = decrypted.toString(CryptoJS.enc.Utf8);
-
-        if (!originalText) {
-            // Check for potential valid JSON structure for files that were text
-            if (encryptedText.includes('---ICE_ENCRYPT_SEPARATOR---')) {
-                throw new Error('File-formatted text detected. Please use File Mode for decryption.');
-            }
-            throw new Error('Invalid encrypted text or wrong key');
-        }
-
-        return originalText;
-    } catch (e) {
-        // Re-throw if it's the custom error, otherwise provide specific error for wrong key
-        if (e.message.includes('File-formatted text detected')) {
-             throw e;
-        }
-        if (e.message.includes('Malformed UTF-8 data') || e.message.includes('Unexpected token')) {
-            throw new Error('Decryption failed. Wrong encryption key or corrupted data.');
-        }
-        throw new Error('Decryption failed. Please check the encrypted text and encryption key.');
-    }
-}
-
-// File encryption/decryption functions
-async function encryptFile(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer);
-
-    const key = getEncryptionKey();
-    
-    // Encrypt the file data
-    const encrypted = CryptoJS.AES.encrypt(wordArray, key).toString();
-
-    // Create metadata
-    const metadata = {
-        originalName: file.name,
-        originalSize: file.size,
-        originalType: file.type,
-        encryptedAt: new Date().toISOString(),
-        version: '1.0'
-    };
-
-    // Combine metadata and encrypted data
-    const metadataStr = JSON.stringify(metadata);
-    const encryptedWithMetadata = metadataStr + '\n---ICE_ENCRYPT_SEPARATOR---\n' + encrypted;
-
-    return new Blob([encryptedWithMetadata], { type: 'application/octet-stream' });
-}
-
-async function decryptFile(file) {
-    const text = await file.text();
-    const parts = text.split('\n---ICE_ENCRYPT_SEPARATOR---\n');
-
-    if (parts.length !== 2) {
-        throw new Error('Invalid encrypted file format');
-    }
-
-    const metadata = JSON.parse(parts[0]);
-    const encryptedData = parts[1];
-
-    const key = getEncryptionKey();
-    
-    try {
-        // Decrypt the file data
-        const decrypted = CryptoJS.AES.decrypt(encryptedData, key);
-        
-        // CRITICAL FIX: Check if decryption was successful
-        if (!decrypted || !decrypted.words || decrypted.words.length === 0) {
-            throw new Error('Decryption failed. Wrong encryption key or corrupted file.');
-        }
-        
-        const arrayBuffer = wordArrayToArrayBuffer(decrypted);
-        
-        // Additional validation: check if we got a valid ArrayBuffer
-        if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-            throw new Error('Decryption failed. Wrong encryption key or corrupted file.');
-        }
-
-        // Return the original file with metadata
-        return {
-            data: arrayBuffer,
-            metadata: metadata
-        };
-    } catch (e) {
-        // Re-throw our custom errors, otherwise provide generic error
-        if (e.message.includes('Decryption failed')) {
-            throw e;
-        }
-        throw new Error('Decryption failed. Wrong encryption key or corrupted file.');
-    }
-}
-
-function wordArrayToArrayBuffer(wordArray) {
-    const arrayOfWords = wordArray.hasOwnProperty('words') ? wordArray.words : [];
-    const length = wordArray.hasOwnProperty('sigBytes') ? wordArray.sigBytes : arrayOfWords.length * 4;
-    const uInt8Array = new Uint8Array(length);
-    let index = 0;
-    let word;
-    let i;
-
-    for (i = 0; i < length; i++) {
-        word = arrayOfWords[i];
-        uInt8Array[index++] = word >> 24;
-        uInt8Array[index++] = (word >> 16) & 0xff;
-        uInt8Array[index++] = (word >> 8) & 0xff;
-        uInt8Array[index++] = word & 0xff;
-    }
-
-    return uInt8Array.buffer.slice(0, length);
-}
-
-// Chunked processing for large files
-async function encryptFileChunked(file, onProgress) {
-    const fileSize = file.size;
-    const chunks = Math.ceil(fileSize / CHUNK_SIZE);
-    const encryptedChunks = [];
-
-    const key = getEncryptionKey();
-    
-    for (let i = 0; i < chunks; i++) {
-        if (processingController && processingController.signal.aborted) {
-            throw new Error('Operation cancelled');
-        }
-
-        const start = i * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, fileSize);
-        const chunk = file.slice(start, end);
-
-        const arrayBuffer = await chunk.arrayBuffer();
-        const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer);
-        const encrypted = CryptoJS.AES.encrypt(wordArray, key).toString();
-
-        encryptedChunks.push(encrypted);
-
-        if (onProgress) {
-            onProgress((i + 1) / chunks);
-        }
-
-        // Allow UI to update
-        await new Promise(resolve => setTimeout(resolve, 0));
-    }
-
-    // Create metadata
-    const metadata = {
-        originalName: file.name,
-        originalSize: file.size,
-        originalType: file.type,
-        encryptedAt: new Date().toISOString(),
-        version: '1.0',
-        chunked: true,
-        totalChunks: chunks
-    };
-
-    // Combine metadata and encrypted chunks
-    const metadataStr = JSON.stringify(metadata);
-    const encryptedWithMetadata = metadataStr + '\n---ICE_ENCRYPT_SEPARATOR---\n' + encryptedChunks.join('\n---CHUNK_SEPARATOR---\n');
-
-    return new Blob([encryptedWithMetadata], { type: 'application/octet-stream' });
-}
-
-async function decryptFileChunked(file, onProgress) {
-    const text = await file.text();
-    const parts = text.split('\n---ICE_ENCRYPT_SEPARATOR---\n');
-
-    if (parts.length !== 2) {
-        throw new Error('Invalid encrypted file format');
-    }
-
-    const metadata = JSON.parse(parts[0]);
-    const encryptedChunks = parts[1].split('\n---CHUNK_SEPARATOR---\n');
-
-    if (!metadata.chunked || encryptedChunks.length !== metadata.totalChunks) {
-        throw new Error('Invalid chunked file format');
-    }
-
-    const key = getEncryptionKey();
-    const decryptedChunks = [];
-
-    for (let i = 0; i < encryptedChunks.length; i++) {
-        if (processingController && processingController.signal.aborted) {
-            throw new Error('Operation cancelled');
-        }
-
-        try {
-            const decrypted = CryptoJS.AES.decrypt(encryptedChunks[i], key);
-            
-            // CRITICAL FIX: Check if decryption was successful
-            if (!decrypted || !decrypted.words || decrypted.words.length === 0) {
-                throw new Error('Decryption failed. Wrong encryption key or corrupted file.');
-            }
-            
-            const arrayBuffer = wordArrayToArrayBuffer(decrypted);
-            
-            // Additional validation: check if we got a valid ArrayBuffer
-            if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-                throw new Error('Decryption failed. Wrong encryption key or corrupted file.');
-            }
-            
-            decryptedChunks.push(arrayBuffer);
-        } catch (e) {
-            // Re-throw our custom errors, otherwise provide generic error
-            if (e.message.includes('Decryption failed')) {
-                throw e;
-            }
-            throw new Error('Decryption failed. Wrong encryption key or corrupted file.');
-        }
-
-        if (onProgress) {
-            onProgress((i + 1) / encryptedChunks.length);
-        }
-
-        // Allow UI to update
-        await new Promise(resolve => setTimeout(resolve, 0));
-    }
-
-    // Combine all chunks into a single ArrayBuffer
-    const totalLength = decryptedChunks.reduce((sum, chunk) => sum + chunk.byteLength, 0);
-    const combinedBuffer = new Uint8Array(totalLength);
-    let offset = 0;
-
-    for (const chunk of decryptedChunks) {
-        combinedBuffer.set(new Uint8Array(chunk), offset);
-        offset += chunk.byteLength;
-    }
-
-    return {
-        data: combinedBuffer.buffer,
-        metadata: metadata
-    };
-}
-
-
-// Progress tracking
-function updateProgress(status, percent) {
-    progressStatus.textContent = status;
-    progressPercent.textContent = Math.round(percent * 100) + '%';
-    progressFill.style.width = (percent * 100) + '%';
-}
-
-function showProgress() {
-    progressSection.classList.remove('hidden');
-}
-
-function hideProgress() {
-    progressSection.classList.add('hidden');
-    updateProgress('Processing...', 0);
-}
-
-// File processing handlers
-async function processFiles(operation) {
-    if (isProcessing) return;
-
-    if (selectedFiles.length === 0) {
-        alert('Please select files first.');
-        return;
-    }
-
-    // Validate encryption key for both encrypt and decrypt operations
-    if (!validateCurrentKey()) {
-        return;
-    }
-
-    isProcessing = true;
-    processedFiles = [];
-    processingController = new AbortController();
-
-    try {
-        showProgress();
-        updateProgress('Starting...', 0);
-
-        for (let i = 0; i < selectedFiles.length; i++) {
-            const file = selectedFiles[i];
-            const fileName = file.name;
-
-            updateProgress(`${operation === 'encrypt' ? 'Encrypting' : 'Decrypting'} ${fileName}...`, i / selectedFiles.length);
-
-            let result;
-            if (operation === 'encrypt') {
-                if (file.size > 50 * 1024 * 1024) { // 50MB threshold for chunked processing
-                    result = await encryptFileChunked(file, (progress) => {
-                        const overallProgress = (i + progress) / selectedFiles.length;
-                        updateProgress(`${operation === 'encrypt' ? 'Encrypting' : 'Decrypting'} ${fileName}...`, overallProgress);
-                    });
-                } else {
-                    result = await encryptFile(file);
-                    updateProgress(`${operation === 'encrypt' ? 'Encrypting' : 'Decrypting'} ${fileName}...`, (i + 1) / selectedFiles.length);
-                }
-
-                processedFiles.push({
-                    originalFile: file,
-                    processedBlob: result,
-                    newName: file.name + '.ice',
-                    operation: 'encrypt'
-                });
-            } else {
-                let decryptedResult;
-                if (file.name.endsWith('.ice')) {
-                    try {
-                        if (file.size > 50 * 1024 * 1024) {
-                            decryptedResult = await decryptFileChunked(file, (progress) => {
-                                const overallProgress = (i + progress) / selectedFiles.length;
-                                updateProgress(`${operation === 'encrypt' ? 'Encrypting' : 'Decrypting'} ${fileName}...`, overallProgress);
-                            });
-                        } else {
-                            decryptedResult = await decryptFile(file);
-                        }
-
-                        processedFiles.push({
-                            originalFile: file,
-                            processedBlob: new Blob([decryptedResult.data], { type: decryptedResult.metadata.originalType }),
-                            newName: decryptedResult.metadata.originalName,
-                            operation: 'decrypt',
-                            metadata: decryptedResult.metadata
-                        });
-                    } catch (e) {
-                        // CRITICAL: Stop all processing if any file fails to decrypt
-                        // This prevents silent failures when wrong key is used
-                        console.error(`Failed to decrypt ${fileName}:`, e);
-                        hideProgress();
-                        isProcessing = false;
-                        processingController = null;
-                        
-                        // Show error both in alert and in text area
-                        const errorMsg = `File decryption failed: ${e.message}`;
-                        showTextError(errorMsg);
-                        alert(`❌ Decryption Error\n\nFile: ${fileName}\nError: ${e.message}\n\nThis usually means the wrong encryption key was used. Please check your custom key and try again.`);
-                        return; // Stop all further processing
-                    }
-                } else {
-                    alert(`File "${fileName}" doesn't appear to be encrypted.`);
-                    continue;
-                }
-            }
-
-            // Allow UI to update
-            await new Promise(resolve => setTimeout(resolve, 0));
-        }
-
-        updateProgress('Complete!', 1);
-        renderProcessedFiles();
-
-        // Add to history
-        processedFiles.forEach(item => {
-            const historyType = item.operation === 'encrypt' ? 'encrypt' : 'decrypt';
-            const inputDesc = `${item.operation === 'encrypt' ? 'File' : 'Encrypted file'}: ${item.originalFile.name}`;
-            const outputDesc = `${item.operation === 'encrypt' ? 'Encrypted' : 'Decrypted'} file: ${item.newName}`;
-            addToHistory(historyType, inputDesc, outputDesc);
-        });
-
-        setTimeout(() => hideProgress(), 2000);
-
-    } catch (e) {
-        alert('Processing failed: ' + e.message);
-        hideProgress();
-    } finally {
-        isProcessing = false;
-        processingController = null;
-    }
-}
-
-function renderProcessedFiles() {
-    if (processedFiles.length === 0) {
-        fileOutputList.innerHTML = '<p class="no-files">No files processed yet.</p>';
-        return;
-    }
-
-    fileOutputList.innerHTML = processedFiles.map((item, index) => `
-        <div class="processed-file-item">
-            <div class="processed-file-info">
-                <span class="processed-file-icon">${item.operation === 'encrypt' ? '🔐' : '🔓'}</span>
-                <div class="processed-file-details">
-                    <div class="processed-file-name">${escapeHtml(item.newName)}</div>
-                    <div class="processed-file-meta">
-                        ${item.operation === 'encrypt' ? 'Encrypted' : 'Decrypted'} • ${formatFileSize(item.processedBlob.size)}
-                    </div>
-                </div>
-            </div>
-            <div class="processed-file-actions">
-                <button class="btn-download-single" onclick="downloadFile(${index})" title="Download this file">📥</button>
-                <button class="btn-preview" onclick="previewFile(${index})" title="Preview file">👁️</button>
+            <div class="file-actions">
+                <button class="btn btn-ghost btn-sm" onclick="removeFile(\${i})" title="Remove file">✕</button>
             </div>
         </div>
-    `).join('');
+    \`).join('');
+}
+
+/* ==========================================================================
+   File Processing (CryptoJS for legacy compatibility of files)
+   ========================================================================== */
+
+function setProgress(status, percent) {
+    els.progressStatus.textContent = status;
+    els.progressPercent.textContent = Math.round(percent * 100) + '%';
+    els.progressFill.style.width = \`\${percent * 100}%\`;
+}
+
+// Convert CryptoJS WordArray to native ArrayBuffer
+function wordArrayToBuffer(wordArray) {
+    const words = wordArray.words;
+    const sigBytes = wordArray.sigBytes;
+    const u8 = new Uint8Array(sigBytes);
+    for (let i = 0; i < sigBytes; i++) {
+        u8[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+    }
+    return u8.buffer;
+}
+
+// Convert native ArrayBuffer to CryptoJS WordArray
+function bufferToWordArray(buffer) {
+    const u8 = new Uint8Array(buffer);
+    const words = [];
+    for (let i = 0; i < u8.length; i++) {
+        words[i >>> 2] |= u8[i] << (24 - (i % 4) * 8);
+    }
+    return CryptoJS.lib.WordArray.create(words, u8.length);
+}
+
+async function processFileChunked(file, password, operation, onProgress) {
+    const CHUNK_SIZE = window.ICE_CONFIG?.chunkSize || 1024 * 1024;
+    
+    if (operation === 'encrypt') {
+        const chunks = Math.ceil(file.size / CHUNK_SIZE);
+        const encryptedChunks = [];
+        
+        for (let i = 0; i < chunks; i++) {
+            if (state.abortController?.signal.aborted) throw new Error("Cancelled");
+            
+            const start = i * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunk = await file.slice(start, end).arrayBuffer();
+            
+            const wordArray = bufferToWordArray(chunk);
+            // using CryptoJS for file chunking compatibility
+            const encrypted = CryptoJS.AES.encrypt(wordArray, password).toString();
+            encryptedChunks.push(encrypted);
+            
+            onProgress((i + 1) / chunks);
+            await new Promise(r => setTimeout(r, 0)); // yield
+        }
+        
+        const metadata = {
+            originalName: file.name,
+            originalSize: file.size,
+            originalType: file.type,
+            version: '2.0',
+            chunked: true,
+            totalChunks: chunks
+        };
+        
+        const output = JSON.stringify(metadata) + '\\n---ICE_ENCRYPT_SEPARATOR---\\n' + encryptedChunks.join('\\n---CHUNK_SEPARATOR---\\n');
+        return new Blob([output], { type: 'application/octet-stream' });
+        
+    } else {
+        // Decrypt
+        const text = await file.text();
+        const parts = text.split('\\n---ICE_ENCRYPT_SEPARATOR---\\n');
+        if (parts.length !== 2) throw new Error("Invalid encrypted file format.");
+        
+        const metadata = JSON.parse(parts[0]);
+        if (!metadata.chunked) {
+            // handle small file fallback
+            const decrypted = CryptoJS.AES.decrypt(parts[1], password);
+            if (!decrypted.sigBytes) throw new Error("Incorrect key or corrupted file.");
+            return { blob: new Blob([wordArrayToBuffer(decrypted)], { type: metadata.originalType }), name: metadata.originalName };
+        }
+        
+        const encChunks = parts[1].split('\\n---CHUNK_SEPARATOR---\\n');
+        if (encChunks.length !== metadata.totalChunks) throw new Error("Corrupted chunked file.");
+        
+        const decBuffers = [];
+        for (let i = 0; i < encChunks.length; i++) {
+            if (state.abortController?.signal.aborted) throw new Error("Cancelled");
+            
+            const decrypted = CryptoJS.AES.decrypt(encChunks[i], password);
+            if (!decrypted.sigBytes) throw new Error("Incorrect key or corrupted file.");
+            
+            decBuffers.push(wordArrayToBuffer(decrypted));
+            onProgress((i + 1) / encChunks.length);
+            await new Promise(r => setTimeout(r, 0));
+        }
+        
+        return {
+            blob: new Blob(decBuffers, { type: metadata.originalType }),
+            name: metadata.originalName
+        };
+    }
+}
+
+async function handleFileCrypto(operation) {
+    if (state.selectedFiles.length === 0) {
+        showToast("Warning", "Please select files to process.", "warning");
+        return;
+    }
+    
+    let password;
+    try {
+        password = getCurrentKey();
+    } catch (e) {
+        showToast("Configuration Error", e.message, "error");
+        return;
+    }
+    
+    if (operation === 'decrypt') {
+        const hasNonIce = state.selectedFiles.some(f => !f.name.endsWith('.ice'));
+        if (hasNonIce) {
+            showToast("Warning", "Only .ice files can be decrypted.", "error");
+            return;
+        }
+    }
+    
+    state.isProcessing = true;
+    state.abortController = new AbortController();
+    state.processedFiles = [];
+    
+    els.progressSection.hidden = false;
+    els.encryptFilesBtn.disabled = true;
+    els.decryptFilesBtn.disabled = true;
+    
+    try {
+        const totalFiles = state.selectedFiles.length;
+        
+        for (let i = 0; i < totalFiles; i++) {
+            if (state.abortController.signal.aborted) break;
+            
+            const file = state.selectedFiles[i];
+            setProgress(\`\${operation === 'encrypt' ? 'Encrypting' : 'Decrypting'} \${file.name}...\`, i / totalFiles);
+            
+            let resultBlob;
+            let resultName;
+            
+            if (operation === 'encrypt') {
+                resultBlob = await processFileChunked(file, password, 'encrypt', (p) => {
+                    setProgress(\`Encrypting \${file.name}...\`, (i + p) / totalFiles);
+                });
+                resultName = file.name + '.ice';
+            } else {
+                const dec = await processFileChunked(file, password, 'decrypt', (p) => {
+                    setProgress(\`Decrypting \${file.name}...\`, (i + p) / totalFiles);
+                });
+                resultBlob = dec.blob;
+                resultName = dec.name;
+            }
+            
+            state.processedFiles.push({
+                blob: resultBlob,
+                name: resultName,
+                operation: operation
+            });
+            
+            addToHistory(operation, \`File: \${file.name}\`, \`Result: \${resultName}\`);
+        }
+        
+        if (!state.abortController.signal.aborted) {
+            setProgress("Complete!", 1);
+            renderFileOutputs();
+            showToast("Success", \`Processed \${state.processedFiles.length} files successfully.\`, "success");
+            // Clear input queue
+            state.selectedFiles = [];
+            renderFileList();
+            els.fileInput.value = '';
+        }
+        
+    } catch (e) {
+        if (e.message === "Cancelled") {
+            showToast("Cancelled", "File processing stopped.", "info");
+        } else {
+            showToast("Processing Error", e.message, "error");
+        }
+    } finally {
+        state.isProcessing = false;
+        state.abortController = null;
+        els.encryptFilesBtn.disabled = false;
+        els.decryptFilesBtn.disabled = false;
+        setTimeout(() => {
+            if (!state.isProcessing) els.progressSection.hidden = true;
+        }, 2000);
+    }
+}
+
+function renderFileOutputs() {
+    if (state.processedFiles.length === 0) {
+        els.fileOutputSection.hidden = true;
+        return;
+    }
+    
+    els.fileOutputSection.hidden = false;
+    els.fileOutputList.innerHTML = state.processedFiles.map((f, i) => \`
+        <div class="processed-file-item">
+            <div class="file-info">
+                <span class="file-icon">\${f.operation === 'encrypt' ? '🔐' : '🔓'}</span>
+                <div class="file-details">
+                    <div class="file-name" title="\${escapeHtml(f.name)}">\${escapeHtml(f.name)}</div>
+                    <div class="file-meta">\${f.operation === 'encrypt' ? 'Encrypted' : 'Decrypted'} • \${formatFileSize(f.blob.size)}</div>
+                </div>
+            </div>
+            <div class="file-actions">
+                <button class="btn btn-ghost btn-sm" onclick="downloadFile(\${i})" title="Download">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+            </div>
+        </div>
+    \`).join('');
 }
 
 function downloadFile(index) {
-    const item = processedFiles[index];
-    const url = URL.createObjectURL(item.processedBlob);
+    const f = state.processedFiles[index];
+    const url = URL.createObjectURL(f.blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = item.newName;
+    a.download = f.name;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
 
-function downloadAllFiles() {
-    processedFiles.forEach((item, index) => {
-        setTimeout(() => downloadFile(index), index * 100); // Stagger downloads
+function downloadAllProcessed() {
+    state.processedFiles.forEach((f, i) => {
+        setTimeout(() => downloadFile(i), i * 200); // Stagger downloads slightly
     });
 }
 
-// NEW: Enhanced previewFile function to handle text/JSON/ICE files
-function previewFile(index) {
-    const item = processedFiles[index];
-    const mimeType = item.processedBlob.type;
-    const url = URL.createObjectURL(item.processedBlob);
+/* ==========================================================================
+   History Management
+   ========================================================================== */
 
-    if (mimeType.startsWith('image/')) {
-        const img = new Image();
-        img.onload = () => {
-            // Open in new tab for full view
-            window.open(url, '_blank');
-        };
-        img.src = url;
-        // Don't forget to revoke URL later if not opening in a new tab
-    } else if (mimeType.startsWith('text/') || mimeType === 'application/json' || item.newName.endsWith('.ice')) {
-        // Handle text-like content: read as text
-        item.processedBlob.text().then(text => {
-            const previewWindow = window.open('', '_blank');
-            previewWindow.document.write(`
-                <html>
-                <head>
-                    <title>Preview: ${item.newName}</title>
-                    <style>
-                        body { font-family: monospace; white-space: pre-wrap; padding: 20px; background: #2b2b2b; color: #b0eaff; }
-                        h2 { color: #6ec1e3; }
-                        pre { overflow: auto; max-height: 90vh; }
-                    </style>
-                </head>
-                <body>
-                    <h2>Preview: ${item.newName}</h2>
-                    <hr>
-                    <pre>${escapeHtml(text)}</pre>
-                </body>
-                </html>
-            `);
-            previewWindow.document.close();
-            URL.revokeObjectURL(url); // Revoke immediately as content is copied to new window
-        }).catch(e => {
-            alert('Failed to read file content for preview.');
-            URL.revokeObjectURL(url);
-        });
-    } else {
-        alert('Preview not available for this file type.');
-        URL.revokeObjectURL(url);
-    }
-}
-
-
-function cancelProcessing() {
-    if (processingController) {
-        processingController.abort();
-    }
-}
-
-// MODIFIED: Encrypt handler - uses custom error and clears input
-function handleEncrypt() {
-    clearTextError();
-    
-    // Validate encryption key first
-    if (!validateCurrentKey()) {
-        return;
-    }
-    
-    if (currentMode === 'text') {
-        try {
-            const inputText = textInput.value;
-            const encrypted = encryptText(inputText);
-
-            // Display result with animation
-            textOutput.value = encrypted;
-            textOutput.style.transition = 'opacity 0.5s ease';
-            textOutput.style.opacity = '0';
-            setTimeout(() => {
-                textOutput.style.opacity = '1';
-            }, 50);
-
-            // Add to history and clear input (UX Improvement)
-            addToHistory('encrypt', inputText, encrypted);
-            textInput.value = ''; // UX Improvement: Clear input after success
-
-        } catch (e) {
-            showTextError(e.message); // Use custom error display
+function loadHistory() {
+    try {
+        const saved = localStorage.getItem('iceEncryptHistoryV2');
+        if (saved) {
+            state.history = JSON.parse(saved);
+            renderHistory();
+            els.historyCount.textContent = state.history.length;
         }
-    } else {
-        processFiles('encrypt');
+    } catch (e) {
+        console.error("Failed to load history", e);
     }
 }
 
-// MODIFIED: Decrypt handler - uses custom error and clears input
-function handleDecrypt() {
-    clearTextError();
-    
-    // Validate encryption key first
-    if (!validateCurrentKey()) {
-        return;
-    }
-    
-    if (currentMode === 'text') {
-        try {
-            const inputText = textInput.value;
-            const decrypted = decryptText(inputText);
-
-            // Display result with animation
-            textOutput.value = decrypted;
-            textOutput.style.transition = 'opacity 0.5s ease';
-            textOutput.style.opacity = '0';
-            setTimeout(() => {
-                textOutput.style.opacity = '1';
-            }, 50);
-
-            // Add to history and clear input (UX Improvement)
-            addToHistory('decrypt', inputText, decrypted);
-            textInput.value = ''; // UX Improvement: Clear input after success
-
-        } catch (e) {
-            showTextError(e.message); // Use custom error display
-        }
-    } else {
-        processFiles('decrypt');
+function saveHistory() {
+    try {
+        localStorage.setItem('iceEncryptHistoryV2', JSON.stringify(state.history));
+        els.historyCount.textContent = state.history.length;
+    } catch (e) {
+        console.error("Failed to save history", e);
     }
 }
 
-/**
- * Handle copy button click (MODIFIED: Enhanced visual feedback)
- */
-function handleCopy() {
-    const outputText = textOutput.value;
+function addToHistory(type, input, output) {
+    const item = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+        type,
+        input,
+        output,
+        timestamp: new Date().toLocaleString()
+    };
     
-    if (!outputText) {
-        // Use custom error display for consistency
-        showTextError('Nothing to copy in the result field!');
-        return;
+    state.history.unshift(item);
+    
+    // Prune
+    const max = window.ICE_CONFIG?.maxHistoryItems || 50;
+    if (state.history.length > max) {
+        state.history = state.history.slice(0, max);
     }
     
-    // Copy to clipboard
-    navigator.clipboard.writeText(outputText)
-        .then(() => {
-            // Visual feedback - enhanced
-            const originalText = copyBtn.textContent;
-            copyBtn.textContent = '✓ Copied!';
-            copyBtn.style.background = 'linear-gradient(135deg, #a8e6cf 0%, #7fc8a8 100%)';
-            copyBtn.style.border = '2px solid #a8e6cf';
-            
-            setTimeout(() => {
-                copyBtn.textContent = originalText;
-                copyBtn.style.background = 'rgba(255, 255, 255, 0.2)'; // Revert to glassmorphism style
-                copyBtn.style.border = '2px solid rgba(255, 255, 255, 0.5)';
-                clearTextError(); // Clear error after successful copy
-            }, 2000);
-        })
-        .catch(err => {
-            console.error('Failed to copy:', err);
-            showTextError('Failed to copy to clipboard.');
-        });
+    saveHistory();
+    renderHistory(els.searchHistory.value);
 }
 
-/**
- * Escape HTML to prevent XSS
- * @param {string} text - Text to escape
- * @returns {string} - Escaped text
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function deleteHistoryItem(id) {
+    state.history = state.history.filter(h => h.id !== id);
+    saveHistory();
+    renderHistory(els.searchHistory.value);
 }
 
-/**
- * Truncate text to a maximum length
- * @param {string} text - Text to truncate
- * @param {number} maxLength - Maximum length
- * @returns {string} - Truncated text
- */
-function truncateText(text, maxLength) {
-    if (text.length <= maxLength) {
-        return text;
-    }
-    return text.substring(0, maxLength) + '...';
-}
-
-// Mode switching functionality (MODIFIED: Clear error and custom key option)
-function switchMode(mode) {
-    currentMode = mode;
-
-    // Update button states
-    textModeBtn.classList.toggle('active', mode === 'text');
-    fileModeBtn.classList.toggle('active', mode === 'file');
-
-    // Show/hide sections
-    textModeSection.classList.toggle('active', mode === 'text');
-    fileModeSection.classList.toggle('active', mode === 'file');
-    textOutputSection.classList.toggle('hidden', mode === 'file');
-    fileOutputSection.classList.toggle('hidden', mode === 'text');
-
-    // Clear outputs when switching
-    textInput.value = ''; // Clear text input
-    textOutput.value = '';
-    fileOutputList.innerHTML = '';
-    processedFiles = [];
-    
-    clearTextError(); // NEW: Clear any existing error
-
-    // Update button text
-    encryptBtnText.textContent = mode === 'text' ? 'Encrypt' : 'Encrypt Files';
-    decryptBtnText.textContent = mode === 'text' ? 'Decrypt' : 'Decrypt Files';
-}
-
-// File drag and drop handlers
-function handleDragOver(e) {
-    e.preventDefault();
-    fileDropZone.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-    e.preventDefault();
-    fileDropZone.classList.remove('drag-over');
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    fileDropZone.classList.remove('drag-over');
-
-    const files = Array.from(e.dataTransfer.files);
-    addFiles(files);
-}
-
-function handleFileInputChange(e) {
-    const files = Array.from(e.target.files);
-    addFiles(files);
-}
-
-function addFiles(files) {
-    const validFiles = [];
-    const errors = [];
-
-    files.forEach(file => {
-        try {
-            validateFile(file);
-            validFiles.push(file);
-        } catch (error) {
-            errors.push(error.message);
-        }
-    });
-
-    if (errors.length > 0) {
-        alert('Some files were rejected:\n' + errors.join('\n'));
-    }
-
-    if (validFiles.length > 0) {
-        selectedFiles.push(...validFiles);
-        renderFileList();
+function clearAllHistory() {
+    if (state.history.length === 0) return;
+    if (confirm("Are you sure you want to clear all history? This cannot be undone.")) {
+        state.history = [];
+        saveHistory();
+        renderHistory();
+        showToast("Cleared", "History has been cleared.", "info");
     }
 }
 
-function removeFile(index) {
-    selectedFiles.splice(index, 1);
-    renderFileList();
-}
-
-function renderFileList() {
-    if (selectedFiles.length === 0) {
-        fileList.innerHTML = '';
+function renderHistory(filterText = '') {
+    if (state.history.length === 0) {
+        els.historyList.innerHTML = '<p class="empty-state">No history yet. Start encrypting or decrypting!</p>';
         return;
     }
 
-    fileList.innerHTML = selectedFiles.map((file, index) => `
-        <div class="file-item">
-            <div class="file-item-info">
-                <span class="file-item-icon">${getFileIcon(file.type)}</span>
-                <div class="file-item-details">
-                    <div class="file-item-name">${escapeHtml(file.name)}</div>
-                    <div class="file-item-size">${formatFileSize(file.size)}</div>
+    const lowerFilter = filterText.toLowerCase();
+    const filtered = state.history.filter(h => 
+        h.input.toLowerCase().includes(lowerFilter) || 
+        h.output.toLowerCase().includes(lowerFilter) ||
+        h.type.toLowerCase().includes(lowerFilter)
+    );
+
+    if (filtered.length === 0) {
+        els.historyList.innerHTML = '<p class="empty-state">No matches found.</p>';
+        return;
+    }
+
+    els.historyList.innerHTML = filtered.map(h => \`
+        <div class="history-item">
+            <div class="hist-header">
+                <div class="hist-type \${h.type}">
+                    \${h.type === 'encrypt' ? '🔐 Encrypted' : '🔓 Decrypted'}
+                </div>
+                <div class="hist-meta">
+                    <span class="hist-time">\${h.timestamp}</span>
+                    <button class="hist-delete" onclick="deleteHistoryItem('\${h.id}')" title="Delete">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                    </button>
                 </div>
             </div>
-            <button class="file-item-remove" onclick="removeFile(${index})" title="Remove file">✕</button>
+            <div class="hist-content">
+                <div class="hist-field">
+                    <span class="hist-label">Input</span>
+                    <div class="hist-val">\${escapeHtml(truncate(h.input, 150))}</div>
+                </div>
+                <div class="hist-field">
+                    <span class="hist-label">Output</span>
+                    <div class="hist-val">\${escapeHtml(truncate(h.output, 150))}</div>
+                </div>
+            </div>
         </div>
-    `).join('');
+    \`).join('');
 }
 
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
 
-// Event listeners
-encryptBtn.addEventListener('click', handleEncrypt);
-decryptBtn.addEventListener('click', handleDecrypt);
-copyBtn.addEventListener('click', handleCopy);
-clearHistoryBtn.addEventListener('click', clearHistory);
-cancelBtn.addEventListener('click', cancelProcessing);
-downloadAllBtn.addEventListener('click', downloadAllFiles);
+function escapeHtml(unsafe) {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
 
-// Password and custom key event listeners
-useCustomKeyCheckbox.addEventListener('change', toggleCustomKeyOption);
-passwordToggle.addEventListener('click', togglePasswordVisibility);
-encryptionKey.addEventListener('input', (e) => {
-    evaluatePasswordStrength(e.target.value);
-});
+function truncate(str, max) {
+    return str.length > max ? str.substring(0, max) + '...' : str;
+}
 
-// Mode toggle listeners
-textModeBtn.addEventListener('click', () => switchMode('text'));
-fileModeBtn.addEventListener('click', () => switchMode('file'));
+// Debounce helper for search
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
-// File drag and drop listeners
-fileDropZone.addEventListener('dragover', handleDragOver);
-fileDropZone.addEventListener('dragleave', handleDragLeave);
-fileDropZone.addEventListener('drop', handleDrop);
-fileDropZone.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', handleFileInputChange);
+/* ==========================================================================
+   Event Listeners
+   ========================================================================== */
 
-// Browse link listener
-document.querySelector('.file-browse-link').addEventListener('click', (e) => {
-    e.stopPropagation();
-    fileInput.click();
-});
-
-// Allow Ctrl+Enter key to trigger encryption in input field
-textInput.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'Enter') {
-        handleEncrypt();
-    }
-});
-
-// Load history when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    loadHistory();
-    // Initialize custom key option
-    initializeCustomKeyOption();
-    // Initialize with text mode
-    switchMode('text');
-});
+function attachEventListeners() {
+    // Nav
+    els.themeBtn?.addEventListener('click', toggleTheme);
+    els.hamburger?.addEventListener('click', () => {
+        const open = els.hamburger.getAttribute('aria-expanded') === 'true';
+        els.hamburger.setAttribute('aria-expanded', !open);
+        els.navLinks.classList.toggle('open', !open);
+    });
+    
+    // Modes
+    els.textModeBtn?.addEventListener('click', () => updateUIForMode('text'));
+    els.fileModeBtn?.addEventListener('click', () => updateUIForMode('file'));
+    
+    // Key Config
+    els.useCustomKey?.addEventListener('change', toggleCustomKey);
+    els.passwordToggle?.addEventListener('click', () => {
+        const isPw = els.encryptionKey.type === 'password';
+        els.encryptionKey.type = isPw ? 'text' : 'password';
+        els.passwordToggle.querySelector('.eye-open').style.display = isPw ? 'none' : 'block';
+        els.passwordToggle.querySelector('.eye-closed').style.display = isPw ? 'block' : 'none';
+    });
+    els.encryptionKey?.addEventListener('input', (e) => evaluatePasswordStrength(e.target.value));
+    
+    // Text Mode
+    els.textInput?.addEventListener('input', updateCharCounter);
+    els.encryptBtn?.addEventListener('click', () => handleTextCrypto('encrypt'));
+    els.decryptBtn?.addEventListener('click', () => handleTextCrypto('decrypt'));
+    els.swapBtn?.addEventListener('click', swapText);
+    els.copyBtn?.addEventListener('click', async () => {
+        const text = els.textOutput.value;
+        if (!text) {
+            showToast("Nothing to copy", "No output text available.", "warning");
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+            
+            // Visual feedback
+            const origHTML = els.copyBtn.innerHTML;
+            els.copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+            els.copyBtn.style.color = 'var(--accent-green)';
+            
+            setTimeout(() => {
+                els.copyBtn.innerHTML = origHTML;
+                els.copyBtn.style.color = '';
+            }, 2000);
+        } catch (err) {
+            showToast("Copy Failed", "Could not write to clipboard.", "error");
+        }
+    });
+    
+    // Keyboard shortcuts (Ctrl+Enter to encrypt, Shift+Ctrl+Enter to decrypt)
+    els.textInput?.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            if (e.shiftKey) handleTextCrypto('decrypt');
+            else handleTextCrypto('encrypt');
+        }
+    });
+    
+    // File Mode
+    els.browseBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        els.fileInput.click();
+    });
+    
+    els.dropZone?.addEventListener('click', (e) => {
+        if (e.target !== els.browseBtn) els.fileInput.click();
+    });
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+        els.dropZone?.addEventListener(evt, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+    
+    els.dropZone?.addEventListener('dragover', () => els.dropZone.classList.add('drag-over'));
+    els.dropZone?.addEventListener('dragleave', () => els.dropZone.classList.remove('drag-over'));
+    els.dropZone?.addEventListener('drop', (e) => {
+        els.dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) handleFilesAdded(Array.from(e.dataTransfer.files));
+    });
+    
+    els.fileInput?.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFilesAdded(Array.from(e.target.files));
+    });
+    
+    els.encryptFilesBtn?.addEventListener('click', () => handleFileCrypto('encrypt'));
+    els.decryptFilesBtn?.addEventListener('click', () => handleFileCrypto('decrypt'));
+    els.cancelBtn?.addEventListener('click', () => {
+        if (state.abortController) state.abortController.abort();
+    });
+    els.downloadAllBtn?.addEventListener('click', downloadAllProcessed);
+    
+    // History
+    els.historyToggle?.addEventListener('click', toggleHistory);
+    els.clearHistoryBtn?.addEventListener('click', clearAllHistory);
+    els.searchHistory?.addEventListener('input', debounce((e) => renderHistory(e.target.value), 300));
+}

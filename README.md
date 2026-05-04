@@ -1,56 +1,60 @@
-# Ice Encrypt
+# Ice Encrypt v3.0
 
-Secure AES Encryption & Decryption web application built with HTML, CSS, and JavaScript.
+A secure, 100% client-side AES-256 encryption and decryption web application.  
+Designed for maximum security, privacy, and ease of use.
 
-## Features
+![Ice Encrypt Hero Image](Soma1.png)
 
-- **Text Encryption/Decryption**: Encrypt and decrypt text content using AES algorithm
-- **File Encryption/Decryption**: Process individual files or batch encrypt/decrypt multiple files (up to 2GB each)
-- **Custom Encryption Keys**: Option to use your own encryption key with password strength indicator
-- **Built-in Key**: Secure default encryption key for quick operations
-- **Progress Tracking**: Real-time progress bars for file operations with cancellation support
-- **Operation History**: View and search through previous encryption/decryption operations
-- **Theme Toggle**: Switch between light and dark modes
-- **Responsive Design**: Works on desktop and mobile devices
-- **Drag & Drop**: Easy file uploading with drag-and-drop interface
+## 🌟 Features
 
-## Usage
+* **Zero Backend**: Processing happens locally in your browser. No data is ever transmitted to a server.
+* **Military-Grade Security**: Uses AES-256-GCM via the native Web Crypto API, with PBKDF2 key derivation (250,000 iterations).
+* **File Support**: Encrypt or decrypt any file up to 2 GB (uses chunked processing to prevent memory crashes).
+* **Modern UI/UX**: Responsive glassmorphism design with animated background, dark/light modes, drag-and-drop file support, and toast notifications.
+* **History Management**: Keeps a local history of your operations (stored in `localStorage` only).
+* **Modular Architecture**: Codebase split into ES modules (`crypto.js`, `ui.js`, `history.js`, `main.js`).
 
-1. **Open the Application**: Simply open `index.html` in any modern web browser. Alternatively, access the live version at https://iceencrypt.netlify.app/
-2. **Choose Mode**: Select between Text mode (📝) or File mode (📁)
-3. **Enter Content**: 
-   - For text: Type or paste your content in the text area
-   - For files: Drag and drop files or click to browse
-4. **Set Encryption Key** (optional): Check "Use custom encryption key" and enter your password
-5. **Process**: Click "Encrypt" or "Decrypt" button
-6. **View Results**: 
-   - Text results appear in the output area (click copy button to clipboard)
-   - File results can be downloaded individually or as a batch
+## 🚀 How to Use
 
-## Security Notes
+Because the app uses ES modules (`type="module"`), it must be served over HTTP — opening `index.html` directly as a `file://` URL will not work.
 
-- All encryption/decryption happens client-side in your browser
-- No data is sent to external servers
-- Files are processed in memory and not stored permanently
-- Use strong, unique passwords for custom encryption keys
+**Quick start with Node.js:**
+```bash
+npx serve .
+```
+Then open the URL shown in your terminal (e.g. `http://localhost:3000`).
 
-## Author
+### Text Mode
+1. A unique **Session Key** is generated automatically on each visit. You can also toggle **Use custom encryption key** to set your own passphrase.
+2. Type or paste your text into the **Input** box.
+3. Click **Encrypt** or press `Ctrl + Enter`.
+4. Click **Copy** to copy the secure output.
+5. To decrypt, paste an `Ice:…` encrypted string into the Input box and click **Decrypt** (or `Ctrl + Shift + Enter`).
 
-**VLX Soma**
+### File Mode
+1. Click the **Files** tab.
+2. Drag and drop your file(s), or click **browse**.
+3. Ensure your encryption key is set as desired.
+4. Click **Encrypt Files** — each file is saved with a `.ice` extension.
+5. To decrypt, add the `.ice` file(s) and click **Decrypt Files**.
 
-- LinkedIn: [Usama Balhasal](https://www.linkedin.com/in/usama-balhasal/)
-- Instagram: [@vlx_soma](https://www.instagram.com/vlx_soma/)
-- Facebook: [Usama Balhalsal](https://www.facebook.com/usama.balhalsal.05)
-- GitHub: [@vlxb](https://github.com/Usama-Balhasal)
+## 🔐 Security Architecture
 
-## Contributing
+Ice Encrypt v3.0 addresses major security flaws found in typical client-side crypto apps:
 
-This is a personal project. Feel free to fork and modify for your own use.
+1. **Native Web Crypto API**: All encryption uses the browser's native `SubtleCrypto` API — no third-party crypto libraries for new operations.
+2. **AES-GCM**: Uses Galois/Counter Mode (GCM) which provides both confidentiality and data origin authentication (integrity check).
+3. **PBKDF2 Derivation**: Keys are derived using PBKDF2 with a unique random salt and **250,000 iterations** of SHA-256.
+4. **No Exposed Keys**: A fresh, cryptographically secure 256-bit session key is generated in memory every time you open the app. No keys are persisted or transmitted.
+5. **Ciphertext Format**: Encrypted text is prefixed with `Ice:` followed by base64-encoded salt, IV, and ciphertext — making the format self-describing.
+6. **No `eval()` or `document.write()`**: Eliminated legacy XSS vectors.
 
-## License
+## 👨‍💻 Developer
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**Usama Balhasal**
+* GitHub: [@Usama-Balhasal](https://github.com/Usama-Balhasal)
+* LinkedIn: [Usama Balhasal](https://www.linkedin.com/in/usama-balhasal/)
 
-## Disclaimer
+## 📄 License
 
-Always keep backups of important data and use strong encryption keys.
+This project is open-source. Feel free to use, modify, and distribute as needed.

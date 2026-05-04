@@ -4,209 +4,447 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ice Encrypt - Secure Encryption & Decryption</title>
-    <link rel="icon" type="image/x-icon" href="favicon.png">
-
+    <title>Ice Encrypt — AES-256 Encryption & Decryption</title>
+    <meta name="description"
+        content="Free, open-source, 100% client-side AES-256 encryption. Your data never leaves your browser. Zero servers, zero tracking.">
+    <meta property="og:title" content="Ice Encrypt — Secure AES-256 Encryption">
+    <meta property="og:description" content="Military-grade AES-256 encryption running entirely in your browser.">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- CryptoJS retained for legacy v2 file decryption only -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"
         integrity="sha512-a+SUDuwNzXDvz4XrIcXHuCf089/iJAoN4lmrXJg18XnduKK6YlDHNRalv4yd1N40OKI80tFidF+rqTFKGPoWFQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <div class="ice-particles"></div>
+    <!-- Animated Background -->
+    <div class="bg-layer" aria-hidden="true"></div>
+    <div class="bg-orb orb-1" aria-hidden="true"></div>
+    <div class="bg-orb orb-2" aria-hidden="true"></div>
+    <div class="bg-orb orb-3" aria-hidden="true"></div>
 
-    <!-- Navigation Header -->
-    <nav class="main-nav">
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+    <!-- Navigation -->
+    <nav class="main-nav" role="navigation" aria-label="Main navigation">
         <div class="nav-container">
-            <div class="nav-brand">
-                <a href="index.html" class="nav-logo-link">
-                    <img src="favicon.png" alt="Logo" class="nav-logo">
-                </a>
-                <a href="index.html" class="nav-title">Ice Encrypt</a>
+            <a href="index.html" class="nav-brand" aria-label="Ice Encrypt Home">
+                <div class="nav-logo-icon" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 2L4 8V16C4 22.627 9.373 28 16 28C22.627 28 28 22.627 28 16V8L16 2Z"
+                            fill="url(#sg1)" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+                        <path d="M12 15.5L15 18.5L21 12.5" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <defs>
+                            <linearGradient id="sg1" x1="4" y1="2" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#38bdf8" />
+                                <stop offset="1" stop-color="#818cf8" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <span class="nav-title">Ice Encrypt</span>
+                <span class="nav-version">v3.0</span>
+            </a>
+
+            <div class="nav-links" id="navLinks">
+                <a href="index.html" class="nav-link active" aria-current="page">Encrypt</a>
+                <a href="about-me.html" class="nav-link">About</a>
+                <button id="themeToggleBtn" class="nav-theme-btn" title="Toggle theme"
+                    aria-label="Toggle dark/light mode">
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5" />
+                        <path
+                            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                    </svg>
+                </button>
             </div>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link active">Home</a>
-                <a href="about-me.html" class="nav-link">About Me</a>
-            </div>
+
+            <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu" aria-expanded="false"
+                aria-controls="navLinks">
+                <span></span><span></span><span></span>
+            </button>
         </div>
     </nav>
 
-    <div class="container">
-        <header class="header">
-            <h1 class="title">Secure AES Encryption & Decryption</h1>
-            <p class="subtitle">Professional encryption tools for your security needs</p>
+    <main class="container" id="main-content">
+
+        <!-- Hero -->
+        <header class="hero" aria-labelledby="hero-title">
+            <div class="hero-badge">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0L1 3v5c0 4.418 3.134 8.545 7 9 3.866-.455 7-4.582 7-9V3L8 0z" />
+                </svg>
+                100% Client-Side &middot; Zero Servers &middot; Open Source
+            </div>
+            <h1 class="hero-title" id="hero-title">
+                <span class="gradient-text">AES-256</span> Encryption
+            </h1>
+            <p class="hero-subtitle">Your data is encrypted locally in your browser using the native Web Crypto API.
+                Nothing ever leaves your device.</p>
+            <div class="hero-stats" aria-label="Key capabilities">
+                <div class="stat"><span class="stat-value">AES-256</span><span class="stat-label">Encryption</span>
+                </div>
+                <div class="stat-dot" aria-hidden="true"></div>
+                <div class="stat"><span class="stat-value">PBKDF2</span><span class="stat-label">Key Derivation</span>
+                </div>
+                <div class="stat-dot" aria-hidden="true"></div>
+                <div class="stat"><span class="stat-value">2 GB</span><span class="stat-label">Max File Size</span>
+                </div>
+                <div class="stat-dot" aria-hidden="true"></div>
+                <div class="stat"><span class="stat-value">0</span><span class="stat-label">Data Sent</span></div>
+            </div>
         </header>
 
-        <div class="main-card">
-            <!-- Custom Key Option - Available for both Text and File modes -->
-            <div class="custom-key-section">
-                <div class="custom-key-option">
-                    <label class="checkbox-container">
-                        <input type="checkbox" id="useCustomKey" class="custom-key-checkbox">
-                        <span class="checkbox-custom"></span>
-                        <span class="checkbox-label">Use custom encryption key</span>
-                    </label>
+        <!-- Session Stats Bar -->
+        <div class="stats-bar" aria-label="Session statistics">
+            <div class="stats-bar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                <span>Encrypted this session:</span>
+                <strong id="statsEncrypted">0</strong>
+            </div>
+            <div class="stats-bar-divider" aria-hidden="true"></div>
+            <div class="stats-bar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+                <span>Decrypted this session:</span>
+                <strong id="statsDecrypted">0</strong>
+            </div>
+        </div>
+
+        <!-- Main Encrypt Card -->
+        <div class="card main-card">
+
+            <!-- Session Key Banner -->
+            <div id="sessionKeyBanner" class="session-key-banner">
+                <div class="session-key-inner">
+                    <svg class="banner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    <div class="banner-body">
+                        <div class="banner-header">
+                            <strong>Session Key Active</strong>
+                            <div class="banner-key-controls">
+                                <button id="sessionKeyReveal" class="icon-btn sm" title="Reveal session key"
+                                    aria-label="Toggle session key visibility">
+                                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                    <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" style="display:none">
+                                        <path
+                                            d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+                                        <line x1="1" y1="1" x2="23" y2="23" />
+                                    </svg>
+                                </button>
+                                <button id="copySessionKeyBtn" class="icon-btn sm" title="Copy session key"
+                                    aria-label="Copy session key">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <code id="sessionKeyDisplay" class="session-key-display"
+                            data-revealed="false">••••••••••••••••••••••••••••••••</code>
+                        <span class="banner-hint">A unique key was generated for this session. Use a custom key for
+                            persistent encryption across sessions.</span>
+                    </div>
                 </div>
-                
-                <!-- Password Section (initially hidden) -->
-                <div id="passwordSection" class="password-section hidden">
-                    <label for="encryptionKey" class="label">Custom Encryption Key/Password:</label>
-                    <div class="password-input-container">
-                        <input type="password" id="encryptionKey" class="password-input"
-                            placeholder="Enter your custom encryption key..." autocomplete="off">
-                        <button type="button" id="passwordToggle" class="password-toggle" title="Show/Hide password">
-                            👁️
+            </div>
+
+            <!-- Key Config -->
+            <div class="key-section">
+                <label class="toggle-label" for="useCustomKey">
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="useCustomKey" role="switch" aria-checked="false">
+                        <span class="toggle-knob"></span>
+                    </div>
+                    <div class="toggle-label-text">
+                        <span class="toggle-title">Use custom encryption key</span>
+                        <span class="toggle-desc">Enter your own passphrase or generate a secure one</span>
+                    </div>
+                </label>
+
+                <div id="passwordSection" class="password-section" hidden>
+                    <label for="encryptionKey" class="field-label">Custom Key / Passphrase</label>
+                    <div class="password-field">
+                        <input type="password" id="encryptionKey" class="field-input mono"
+                            placeholder="Enter passphrase or generate one below…" autocomplete="off" spellcheck="false">
+                        <button type="button" id="passwordToggle" class="field-btn" title="Show/hide key"
+                            aria-label="Toggle key visibility">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" style="display:none">
+                                <path
+                                    d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+                                <line x1="1" y1="1" x2="23" y2="23" />
+                            </svg>
                         </button>
                     </div>
-                    <div id="passwordStrength" class="password-strength">
-                        <div class="strength-indicator">
-                            <span class="strength-text">Password strength: </span>
-                            <div class="strength-bars">
-                                <span class="strength-bar"></span>
-                                <span class="strength-bar"></span>
-                                <span class="strength-bar"></span>
-                            </div>
-                            <span id="strengthLabel" class="strength-label">Not evaluated</span>
+                    <div class="strength-bar-wrap">
+                        <div class="strength-track">
+                            <div id="strengthFill" class="strength-fill"></div>
                         </div>
+                        <span id="strengthLabel" class="strength-label">—</span>
                     </div>
-                </div>
-                
-                <!-- Built-in Key Info (initially visible) -->
-                <div id="builtinKeyInfo" class="builtin-key-info">
-                    <div class="info-box">
-                        <span class="info-icon">🔐</span>
-                        <div class="info-content">
-                            <span class="info-title">Using built-in encryption key</span>
-                            <span class="info-description">The application's built-in secret key will be used for encryption/decryption</span>
-                        </div>
-                    </div>
+                    <button type="button" id="generateKeyBtn" class="btn btn-ghost btn-sm generate-key-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            <path d="M9 12h6M12 9v6" />
+                        </svg>
+                        Generate Strong Key
+                    </button>
                 </div>
             </div>
 
-            <div class="mode-toggle">
-                <button id="textModeBtn" class="mode-btn active" data-mode="text">📝 Text</button>
-                <button id="fileModeBtn" class="mode-btn" data-mode="file">📁 File</button>
-            </div>
-
-            <div id="textModeSection" class="mode-section active">
-                <div class="input-section">
-                    <label for="textInput" class="label">Enter Your Text:</label>
-                    <textarea id="textInput" class="text-input" placeholder="Type or paste your text here..."
-                        rows="6"></textarea>
-                    <div id="textError" class="error-message hidden" aria-live="polite"></div>
-                </div>
-            </div>
-
-            <div id="fileModeSection" class="mode-section">
-                <div class="file-input-section">
-                    <label class="label">Select Files:</label>
-                    <div class="file-drop-zone" id="fileDropZone">
-                        <div class="file-drop-content">
-                            <span class="file-drop-icon">📂</span>
-                            <p>Drag & drop files here or <span class="file-browse-link">browse</span></p>
-                            <input type="file" id="fileInput" multiple style="display: none;">
-                            <small class="file-drop-hint">Max file size: 2GB • Batch processing supported</small>
-                        </div>
-                    </div>
-                    <div id="fileList" class="file-list"></div>
-                </div>
-            </div>
-
-            <div class="action-buttons">
-                <button id="encryptBtn" class="btn btn-encrypt">
-                    <span class="btn-icon">🔐</span>
-                    <span id="encryptBtnText">Encrypt</span>
+            <!-- Mode Tabs -->
+            <div class="mode-tabs" role="tablist" aria-label="Encryption mode">
+                <button id="textModeBtn" class="mode-tab active" role="tab" aria-selected="true"
+                    aria-controls="textModeSection" data-mode="text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                        <polyline points="14,2 14,8 20,8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    Text
                 </button>
-                <button id="decryptBtn" class="btn btn-decrypt">
-                    <span class="btn-icon">🔓</span>
-                    <span id="decryptBtnText">Decrypt</span>
+                <button id="fileModeBtn" class="mode-tab" role="tab" aria-selected="false"
+                    aria-controls="fileModeSection" data-mode="file">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                    </svg>
+                    Files
                 </button>
             </div>
 
-            <div id="progressSection" class="progress-section hidden">
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div id="progressFill" class="progress-fill"></div>
+            <!-- Text Mode -->
+            <div id="textModeSection" class="mode-panel" role="tabpanel" aria-labelledby="textModeBtn">
+                <div class="field-group">
+                    <div class="field-header">
+                        <label for="textInput" class="field-label">Input</label>
+                        <div class="field-header-actions">
+                            <span id="charCounter" class="char-counter">0 chars</span>
+                            <button id="pasteBtn" class="btn btn-ghost btn-xs" type="button"
+                                title="Paste from clipboard" aria-label="Paste from clipboard">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14"
+                                    height="14">
+                                    <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
+                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                                </svg>
+                                Paste
+                            </button>
+                        </div>
                     </div>
-                    <div class="progress-text">
-                        <span id="progressStatus">Processing...</span>
-                        <span id="progressPercent">0%</span>
-                    </div>
+                    <textarea id="textInput" class="field-textarea mono"
+                        placeholder="Paste your text here to encrypt or decrypt…" rows="6" spellcheck="false"
+                        aria-describedby="textError"></textarea>
+                    <div id="textError" class="field-error" role="alert" aria-live="polite" hidden></div>
                 </div>
-                <button id="cancelBtn" class="btn-cancel">❌ Cancel</button>
-            </div>
 
-            <div id="textOutputSection" class="output-section">
-                <div class="output-header">
-                    <label class="label">Result:</label>
-                    <button id="copyBtn" class="btn-copy" title="Copy to clipboard">
-                        📋 Copy
+                <div class="action-row">
+                    <button id="encryptBtn" class="btn btn-primary" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                        <span>Encrypt</span>
+                    </button>
+                    <button id="swapBtn" class="btn btn-swap" type="button" title="Swap input ↕ output"
+                        aria-label="Swap input and output">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
+                        </svg>
+                    </button>
+                    <button id="decryptBtn" class="btn btn-secondary" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0110 0v4" />
+                        </svg>
+                        <span>Decrypt</span>
                     </button>
                 </div>
-                <textarea id="textOutput" class="text-output" placeholder="Your result will appear here..." rows="6"
-                    readonly></textarea>
+                <p class="shortcut-hint" aria-hidden="true">
+                    <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to encrypt &nbsp;·&nbsp; <kbd>Ctrl</kbd> + <kbd>Shift</kbd> +
+                    <kbd>Enter</kbd> to decrypt
+                </p>
+
+                <div class="field-group output-group">
+                    <div class="field-header">
+                        <label for="textOutput" class="field-label">Output</label>
+                        <button id="copyBtn" class="btn btn-ghost btn-sm" type="button">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <textarea id="textOutput" class="field-textarea mono output-textarea"
+                        placeholder="Result will appear here…" rows="6" readonly
+                        aria-label="Encryption output"></textarea>
+                </div>
             </div>
 
-            <div id="fileOutputSection" class="file-output-section hidden">
-                <div class="output-header">
-                    <label class="label">Processed Files:</label>
-                    <button id="downloadAllBtn" class="btn-download-all" title="Download all files">
-                        📥 Download All
+            <!-- File Mode -->
+            <div id="fileModeSection" class="mode-panel" role="tabpanel" aria-labelledby="fileModeBtn" hidden>
+                <div class="drop-zone" id="fileDropZone" role="button" tabindex="0"
+                    aria-label="Drop files here or click to browse">
+                    <div class="drop-zone-inner">
+                        <div class="drop-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                <polyline points="17,8 12,3 7,8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                        </div>
+                        <p class="drop-title">Drop files here</p>
+                        <p class="drop-hint">or <button type="button" class="link-btn" id="browseBtn">browse</button> to
+                            choose files</p>
+                        <p class="drop-meta">Any file type &middot; Up to 2 GB &middot; Batch processing supported</p>
+                    </div>
+                    <input type="file" id="fileInput" multiple hidden aria-hidden="true">
+                </div>
+                <div id="fileList" class="file-list" aria-label="Selected files" aria-live="polite"></div>
+
+                <div class="action-row file-action-row">
+                    <button id="encryptFilesBtn" class="btn btn-primary" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                        <span>Encrypt Files</span>
+                    </button>
+                    <button id="decryptFilesBtn" class="btn btn-secondary" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0110 0v4" />
+                        </svg>
+                        <span>Decrypt Files</span>
                     </button>
                 </div>
-                <div id="fileOutputList" class="file-output-list"></div>
+            </div>
+
+            <!-- Progress -->
+            <div id="progressSection" class="progress-section" hidden>
+                <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                    id="progressBar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <div class="progress-meta">
+                    <span id="progressStatus" class="progress-status">Processing…</span>
+                    <span id="progressPercent" class="progress-pct">0%</span>
+                </div>
+                <button id="cancelBtn" class="btn btn-danger btn-sm" type="button">Cancel</button>
+            </div>
+
+            <!-- File Output -->
+            <div id="fileOutputSection" class="file-output-section" hidden>
+                <div class="field-header">
+                    <span class="field-label">Processed Files</span>
+                    <button id="downloadAllBtn" class="btn btn-ghost btn-sm" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                            <polyline points="7,10 12,15 17,10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download All
+                    </button>
+                </div>
+                <div id="fileOutputList" class="file-list" aria-live="polite"></div>
             </div>
         </div>
 
-        <div class="history-card">
-            <div class="history-header">
-                <h2 class="history-title">📜 History</h2>
-                <button id="clearHistoryBtn" class="btn-clear">Clear History</button>
-            </div>
-            
-            <div class="history-controls">
-                <input type="text" id="searchHistory" class="search-input" placeholder="Search history..." aria-label="Search history entries">
-                <div class="theme-toggle" title="Toggle Dark/Light Mode">
-                    <span class="theme-label-icon">☀️</span>
-                    <label class="switch">
-                        <input type="checkbox" id="themeSwitch" aria-label="Dark Mode Toggle">
-                        <span class="slider"></span>
-                    </label>
-                    <span class="theme-label-icon">🌙</span>
+        <!-- History Card -->
+        <div class="card history-card">
+            <button class="history-toggle" id="historyToggle" aria-expanded="false" aria-controls="historyBody">
+                <div class="history-toggle-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="history-title">History</span>
+                    <span id="historyCount" class="badge">0</span>
                 </div>
-            </div>
-            <div id="historyList" class="history-list">
-                <p class="history-empty">No history yet. Start encrypting or decrypting!</p>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6,9 12,15 18,9" />
+                </svg>
+            </button>
+
+            <div id="historyBody" class="history-body" hidden>
+                <div class="history-controls">
+                    <div class="search-wrap">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <input type="search" id="searchHistory" class="search-input" placeholder="Search history…"
+                            aria-label="Search encryption history">
+                    </div>
+                    <button id="clearHistoryBtn" class="btn btn-danger btn-sm" type="button">Clear All</button>
+                </div>
+                <div id="historyList" class="history-list" aria-live="polite" aria-label="Encryption history"></div>
             </div>
         </div>
-    </div>
+
+    </main>
 
     <!-- Footer -->
-    <footer class="main-footer">
-        <div class="footer-content">
-            <div class="footer-text">
-                <p>Secure AES Encryption & Decryption Made by VLX Soma</p>
-            </div>
-            <div class="footer-social">
-                <a href="https://www.linkedin.com/in/usama-balhasal/" target="_blank" class="social-link" title="LinkedIn">
-                    💼 LinkedIn
+    <footer class="main-footer" role="contentinfo">
+        <div class="footer-inner">
+            <p class="footer-copy">Made with ❤️ by <strong>Usama Balhasal</strong> &middot; Ice Encrypt v3.0</p>
+            <nav class="footer-social" aria-label="Social links">
+                <a href="https://www.linkedin.com/in/usama-balhasal/" target="_blank" rel="noopener noreferrer"
+                    class="social-link" aria-label="LinkedIn">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                        <circle cx="4" cy="4" r="2" />
+                    </svg>
                 </a>
-                <a href="https://www.instagram.com/vlx_soma/" target="_blank" class="social-link" title="Instagram">
-                    📷 Instagram
+                <a href="https://www.instagram.com/vlx_soma/" target="_blank" rel="noopener noreferrer"
+                    class="social-link" aria-label="Instagram">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" />
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                    </svg>
                 </a>
-                <a href="https://www.facebook.com/usama.balhalsal.05" target="_blank" class="social-link" title="Facebook">
-                    👤 Facebook
+                <a href="https://github.com/Usama-Balhasal" target="_blank" rel="noopener noreferrer"
+                    class="social-link" aria-label="GitHub">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
+                    </svg>
                 </a>
-                <a href="https://github.com/Usama-Balhasal" target="_blank" class="social-link" title="GitHub">
-                    🐙 GitHub
-                </a>
-            </div>
+            </nav>
         </div>
     </footer>
-<script src="env.js"></script>
-<script src="script.js"></script>
+
+    <script src="env.js" defer></script>
+    <script type="module" src="modules/main.js"></script>
 </body>
 
 </html>

@@ -4,101 +4,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Me - Ice Encrypt</title>
-    <link rel="icon" type="image/x-icon" href="favicon.png">
-
+    <title>About — Ice Encrypt</title>
+    <meta name="description"
+        content="Learn about Usama Balhasal, the developer behind Ice Encrypt — a secure, open-source AES encryption tool.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <div class="ice-particles"></div>
+    <div class="bg-gradient" aria-hidden="true"></div>
+    <div class="ice-particles" aria-hidden="true"></div>
+    <div id="toastContainer" class="toast-container" aria-live="assertive"></div>
 
-    <!-- Navigation Header -->
-    <nav class="main-nav">
+    <!-- Navigation -->
+    <nav class="main-nav" role="navigation" aria-label="Main navigation">
         <div class="nav-container">
-            <div class="nav-brand">
-                <a href="index.html" class="nav-logo-link">
-                    <img src="favicon.png" alt="Logo" class="nav-logo">
-                </a>
-                <a href="index.html" class="nav-title">Ice Encrypt</a>
-            </div>
-            <div class="nav-links">
+            <a href="index.html" class="nav-brand" aria-label="Ice Encrypt Home">
+                <div class="nav-logo-icon" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 2L4 8V16C4 22.627 9.373 28 16 28C22.627 28 28 22.627 28 16V8L16 2Z"
+                            fill="url(#shieldGrad2)" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+                        <path d="M12 15.5L15 18.5L21 12.5" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <defs>
+                            <linearGradient id="shieldGrad2" x1="4" y1="2" x2="28" y2="28"
+                                gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#6ec1e3" />
+                                <stop offset="1" stop-color="#3d7fa6" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <span class="nav-title">Ice Encrypt</span>
+            </a>
+            <div class="nav-links" id="navLinks">
                 <a href="index.html" class="nav-link">Home</a>
-                <a href="about-me.html" class="nav-link active">About Me</a>
+                <a href="about-me.html" class="nav-link active" aria-current="page">About</a>
+                <button id="themeToggleBtn" class="nav-theme-btn" title="Toggle theme"
+                    aria-label="Toggle dark/light mode">
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5" />
+                        <path
+                            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                    </svg>
+                </button>
             </div>
+            <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu" aria-expanded="false"
+                aria-controls="navLinks">
+                <span></span><span></span><span></span>
+            </button>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="about-card">
-            <div class="about-header">
-                <img src="Soma1.png" alt="VLX Soma" class="profile-image">
-                <h1 class="about-title">About Me</h1>
-            </div>
-            
-            <div class="about-content">
-                <div class="about-section">
-                    <h2 class="about-heading">👨‍💻 Hello, I'm VLX Soma</h2>
-                    <p class="about-text">
-                        I’m a developer who loves building things that actually make life easier. 
-                        Technology has always fascinated me, not just how it works, but how it can be used to solve real problems in smart and creative ways. 
-                        I enjoy learning new tools, experimenting with ideas, and turning them into something practical and secure.
-                    </p>
+    <main class="container">
+        <!-- Profile Hero -->
+        <div class="card about-hero-card">
+            <div class="about-hero">
+                <div class="profile-img-wrap">
+                    <img src="Soma1.png" alt="Usama Balhasal — Developer" class="profile-img">
+                    <div class="profile-glow" aria-hidden="true"></div>
                 </div>
-
-                <div class="about-section">
-                    <h2 class="about-heading">🔐 What I Do</h2>
-                    <p class="about-text">
-                        I create apps and tools that focus on being fast, reliable, and easy to use. 
-                        I like writing clean, well-structured code and designing with care, so everything I build feels smooth and solid from the inside out.
+                <div class="about-hero-text">
+                    <span class="about-badge">👨‍💻 Developer & Creator</span>
+                    <h1 class="about-name">Usama Balhasal</h1>
+                    <p class="about-tagline">Building fast, secure, and user-friendly software that makes life easier.
                     </p>
-                </div>
-
-                <div class="about-section">
-                    <h2 class="about-heading">💡 My Mission</h2>
-                    <p class="about-text">
-                        My goal is to make technology simple and accessible for everyone.
-                        I believe software should be powerful but never complicated.
-                        Every project I take on balances performance, security, and a great user experience, because good tech should just work, beautifully and safely.
-                    </p>
-                </div>
-
-                <div class="about-section">
-                    <h2 class="about-heading">🎯 Why Choose Ice Encrypt?</h2>
-                    <ul class="about-list">
-                        <li>✅ <strong>Client-Side Processing:</strong> Your data never leaves your device</li>
-                        <li>✅ <strong>Military-Grade Security:</strong> AES-256 encryption standard</li>
-                        <li>✅ <strong>Open & Transparent:</strong> Open-source code for trust and verification</li>
-                        <li>✅ <strong>User-Friendly:</strong> Professional encryption made simple</li>
-                        <li>✅ <strong>Cross-Platform:</strong> Works on any device with a web browser</li>
-                    </ul>
+                    <div class="about-links">
+                        <a href="https://github.com/Usama-Balhasal" target="_blank" rel="noopener noreferrer"
+                            class="btn btn-ghost btn-sm">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                <path
+                                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
+                            </svg>
+                            GitHub
+                        </a>
+                        <a href="https://www.linkedin.com/in/usama-balhasal/" target="_blank" rel="noopener noreferrer"
+                            class="btn btn-primary btn-sm">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                <path
+                                    d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                                <circle cx="4" cy="4" r="2" />
+                            </svg>
+                            LinkedIn
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Footer -->
-    <footer class="main-footer">
-        <div class="footer-content">
-            <div class="footer-text">
-                <p>Secure AES Encryption & Decryption Made by VLX Soma</p>
+        <!-- Stats Row -->
+        <div class="about-stats-row">
+            <div class="card stat-card">
+                <div class="stat-card-value">AES-256</div>
+                <div class="stat-card-label">Encryption Standard</div>
             </div>
-            <div class="footer-social">
-                <a href="https://www.linkedin.com/in/usama-balhasal/" target="_blank" class="social-link" title="LinkedIn">
-                    💼 LinkedIn
-                </a>
-                <a href="https://www.instagram.com/vlx_soma/" target="_blank" class="social-link" title="Instagram">
-                    📷 Instagram
-                </a>
-                <a href="https://www.facebook.com/usama.balhalsal.05" target="_blank" class="social-link" title="Facebook">
-                    👤 Facebook
-                </a>
-                <a href="https://github.com/Usama-Balhasal" target="_blank" class="social-link" title="GitHub">
-                    🐙 GitHub
-                </a>
+            <div class="card stat-card">
+                <div class="stat-card-value">100%</div>
+                <div class="stat-card-label">Client-Side Processing</div>
             </div>
+            <div class="card stat-card">
+                <div class="stat-card-value">0</div>
+                <div class="stat-card-label">Servers Involved</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-card-value">Open</div>
+                <div class="stat-card-label">Source Code</div>
+            </div>
+        </div>
+
+        <!-- About Sections -->
+        <div class="about-grid">
+            <div class="card about-section-card">
+                <div class="about-section-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                    </svg>
+                </div>
+                <h2 class="about-section-title">Hello, I'm Usama Balhasal</h2>
+                <p class="about-section-text">I'm a developer who loves building things that actually make life easier.
+                    Technology has always fascinated me — not just how it works, but how it can be used to solve real
+                    problems in smart and creative ways.</p>
+                <p class="about-section-text">I enjoy learning new tools, experimenting with ideas, and turning them
+                    into something practical and secure.</p>
+            </div>
+
+            <div class="card about-section-card">
+                <div class="about-section-icon accent-green" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                </div>
+                <h2 class="about-section-title">Why Ice Encrypt?</h2>
+                <ul class="about-feature-list">
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20,6 9,17 4,12" />
+                        </svg><span><strong>Client-Side Only</strong> — your data never leaves your device</span></li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20,6 9,17 4,12" />
+                        </svg><span><strong>AES-256</strong> — military-grade encryption standard</span></li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20,6 9,17 4,12" />
+                        </svg><span><strong>Open Source</strong> — inspect every line of code</span></li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20,6 9,17 4,12" />
+                        </svg><span><strong>Cross-Platform</strong> — works in any modern browser</span></li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20,6 9,17 4,12" />
+                        </svg><span><strong>File Support</strong> — encrypt any file up to 2 GB</span></li>
+                </ul>
+            </div>
+
+            <div class="card about-section-card">
+                <div class="about-section-icon accent-purple" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16,18 22,12 16,6" />
+                        <polyline points="8,6 2,12 8,18" />
+                    </svg>
+                </div>
+                <h2 class="about-section-title">Tech Stack</h2>
+                <div class="tech-pills">
+                    <span class="tech-pill">HTML5</span>
+                    <span class="tech-pill">CSS3</span>
+                    <span class="tech-pill">Vanilla JS</span>
+                    <span class="tech-pill">CryptoJS</span>
+                    <span class="tech-pill">Web Crypto API</span>
+                    <span class="tech-pill">LocalStorage</span>
+                    <span class="tech-pill">File API</span>
+                    <span class="tech-pill">Drag & Drop API</span>
+                </div>
+            </div>
+
+            <div class="card about-section-card">
+                <div class="about-section-icon accent-amber" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                </div>
+                <h2 class="about-section-title">My Mission</h2>
+                <p class="about-section-text">My goal is to make powerful technology simple and accessible for everyone.
+                    I believe software should be powerful but never complicated.</p>
+                <p class="about-section-text">Every project I take on balances performance, security, and a great user
+                    experience — because good tech should just work, beautifully and safely.</p>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="card cta-card">
+            <h2 class="cta-title">Ready to secure your data?</h2>
+            <p class="cta-text">Start encrypting in seconds — no account, no installation, no data sent anywhere.</p>
+            <a href="index.html" class="btn btn-primary btn-lg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                Start Encrypting
+            </a>
+        </div>
+    </main>
+
+    <footer class="main-footer" role="contentinfo">
+        <div class="footer-inner">
+            <p class="footer-copy">Made with ❤️ by <strong>Usama Balhasal</strong> · Ice Encrypt v2.0</p>
+            <nav class="footer-social" aria-label="Social links">
+                <a href="https://www.linkedin.com/in/usama-balhasal/" target="_blank" rel="noopener noreferrer"
+                    class="social-link" aria-label="LinkedIn">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                        <circle cx="4" cy="4" r="2" />
+                    </svg>
+                </a>
+                <a href="https://www.instagram.com/vlx_soma/" target="_blank" rel="noopener noreferrer"
+                    class="social-link" aria-label="Instagram">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" />
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                    </svg>
+                </a>
+                <a href="https://www.facebook.com/usama.balhalsal.05" target="_blank" rel="noopener noreferrer"
+                    class="social-link" aria-label="Facebook">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
+                    </svg>
+                </a>
+                <a href="https://github.com/Usama-Balhasal" target="_blank" rel="noopener noreferrer"
+                    class="social-link" aria-label="GitHub">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
+                    </svg>
+                </a>
+            </nav>
         </div>
     </footer>
+
+    <script src="env.js" defer></script>
+    <script defer>
+        // Minimal about-page script: theme toggle + hamburger
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('themeToggleBtn');
+            const ham = document.getElementById('navHamburger');
+            const nav = document.getElementById('navLinks');
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+            btn?.addEventListener('click', () => {
+                const dark = document.documentElement.dataset.theme !== 'dark';
+                document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+                localStorage.setItem('darkMode', dark);
+            });
+            ham?.addEventListener('click', () => {
+                const open = ham.getAttribute('aria-expanded') === 'true';
+                ham.setAttribute('aria-expanded', !open);
+                nav.classList.toggle('open', !open);
+            });
+        });
+    </script>
 </body>
 
 </html>
