@@ -22,7 +22,7 @@ npx serve .
 ```
 Then open the URL shown in your terminal (e.g. `http://localhost:3000`).
 
-Or just access the live version at [https://icepassgen.netlify.app/.](https://encrypt-v3.netlify.app/)
+Or just access the live version at [https://encrypt-v3.netlify.app/.](https://encrypt-v3.netlify.app/)
 
 ### Text Mode
 1. A unique **Session Key** is generated automatically on each visit. You can also toggle **Use custom encryption key** to set your own passphrase.
