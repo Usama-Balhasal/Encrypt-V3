@@ -49,11 +49,14 @@ Ice Encrypt v3.0 addresses major security flaws found in typical client-side cry
 5. **Ciphertext Format**: Encrypted text is prefixed with `Ice:` followed by base64-encoded salt, IV, and ciphertext — making the format self-describing.
 6. **No `eval()` or `document.write()`**: Eliminated legacy XSS vectors.
 
-## 👨‍💻 Developer
+## Author
 
 **Usama Balhasal**
-* GitHub: [@Usama-Balhasal](https://github.com/Usama-Balhasal)
-* LinkedIn: [Usama Balhasal](https://www.linkedin.com/in/usama-balhasal/)
+
+- LinkedIn: [Usama Balhasal](https://www.linkedin.com/in/usama-balhasal/)
+- Instagram: [@vlx_soma](https://www.instagram.com/vlx_soma/)
+- Facebook: [Usama Balhasal](https://www.facebook.com/usama.balhasal.05/)
+- GitHub: [@vlxb](https://github.com/Usama-Balhasal)
 
 ## 📄 License
 
